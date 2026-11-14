@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/*
+ * InversionQ — tokens
+ * Inspiración: plano catastral y escritura notarial.
+ *  papel  #F6F7F4  fondo frío, como el papel de un plano
+ *  tinta  #15233F  texto y estructura (azul tinta de escritura)
+ *  linea  #D3D9D4  retícula de parcelas
+ *  parcela#1F7A4D  importes a favor
+ *  sello  #B3261E  impuestos y salidas de dinero
+ *  plano  #3A6EA5  datos neutros en gráficos
+ */
+@theme {
+  --color-papel: #f6f7f4;
+  --color-papel-2: #eceee9;
+  --color-tinta: #15233f;
+  --color-tinta-2: #4a566b;
+  --color-tinta-3: #6e7889;
+  --color-linea: #d3d9d4;
+  --color-parcela: #1f7a4d;
+  --color-parcela-claro: #e3efe7;
+  --color-sello: #b3261e;
+  --color-sello-claro: #f6e4e2;
+  --color-plano: #3a6ea5;
+  --color-plano-claro: #e2eaf3;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+}
+
+html { color-scheme: light; }
+body {
+  background: var(--color-papel);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Retícula catastral de fondo para la cabecera */
+.reticula { position: relative; isolation: isolate; }
+.reticula::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 35%, #000 75%);
+  mask-image: linear-gradient(to right, transparent 0%, transparent 35%, #000 75%);
+  background-image:
+    linear-gradient(var(--color-linea) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-linea) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -1px -1px;
+}
+
+:focus-visible { outline: 2px solid var(--color-plano); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+}
