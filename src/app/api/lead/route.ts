@@ -1,4 +1,4 @@
-/** POST /api/lead — envía a contacto@bminversiones.es los datos de un formulario completado. */
+/** POST /api/lead — envía a angel.martin@bminversiones.es los datos de un formulario completado. */
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sendLead } from "@/lib/leads/sendLead";

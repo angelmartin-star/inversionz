@@ -4,7 +4,7 @@
  *
  * Variables de entorno (Vercel → Settings → Environment Variables):
  *   RESEND_API_KEY  obligatoria. Sin ella no se envía nada (se registra en el log).
- *   LEAD_TO         destinatario. Por defecto contacto@bminversiones.es
+ *   LEAD_TO         destinatario. Por defecto angel.martin@bminversiones.es
  *   LEAD_FROM       remitente. Por defecto "InversionZ <onboarding@resend.dev>"
  *                   (solo entrega a la dirección con la que se creó la cuenta de Resend;
  *                   con el dominio bminversiones.es verificado, usar p. ej. avisos@bminversiones.es)
@@ -111,7 +111,7 @@ ${p.summary && Object.keys(p.summary).length ? `<h3 style="margin:16px 0 6px">Re
 
 export async function sendLead(p: LeadPayload): Promise<{ sent: boolean; reason?: string }> {
   const key = process.env.RESEND_API_KEY;
-  const to = process.env.LEAD_TO || "contacto@bminversiones.es";
+  const to = process.env.LEAD_TO || "angel.martin@bminversiones.es";
   const from = process.env.LEAD_FROM || "InversionZ <onboarding@resend.dev>";
   const mail = buildLeadEmail(p);
   if (!key) {

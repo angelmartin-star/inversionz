@@ -46,14 +46,14 @@ Cálculo orientativo con la normativa vigente en la versión de tablas indicada 
 
 ## Avisos por correo (leads)
 
-Cada vez que alguien completa el análisis, la valoración o la rentabilidad rápida, `/api/lead` envía los datos a **contacto@bminversiones.es** (con nombre, email y teléfono solo si el usuario los deja y acepta la política de privacidad).
+Cada vez que alguien completa el análisis, la valoración o la rentabilidad rápida, `/api/lead` envía los datos a **angel.martin@bminversiones.es** (con nombre, email y teléfono solo si el usuario los deja y acepta la política de privacidad).
 
 Variables en Vercel → Settings → Environment Variables:
 
 | Variable | Valor |
 |---|---|
 | `RESEND_API_KEY` | Clave de [Resend](https://resend.com) (obligatoria) |
-| `LEAD_TO` | Opcional. Por defecto `contacto@bminversiones.es` |
+| `LEAD_TO` | Opcional. Por defecto `angel.martin@bminversiones.es` |
 | `LEAD_FROM` | Opcional. Por defecto `InversionZ <onboarding@resend.dev>`; con el dominio verificado, p. ej. `InversionZ <avisos@bminversiones.es>` |
 
 ## Aproximación con idealista
