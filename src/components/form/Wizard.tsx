@@ -15,6 +15,8 @@ import { buildMortgageSchedule, computeAcquisitionTaxes, resolveRentalReduction 
 import { STEP_SCHEMAS, investmentInputSchema, validateSection, type FieldErrors } from "@/lib/validation/schemas";
 import { eur, pct } from "@/lib/format";
 import { Button, NumberField, Segmented, TextField, Toggle, cn } from "@/components/ui/primitives";
+import { ContactOptIn } from "@/components/leads/ContactOptIn";
+import { notifyLead } from "@/lib/leads/notify";
 import { CatastroLookup } from "./CatastroLookup";
 
 const DRAFT_KEY = "inversionq:borrador";
@@ -120,6 +122,7 @@ export function Wizard() {
       return;
     }
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch { /* sin almacenamiento */ }
+    notifyLead("analisis", payload);
     router.push("/analisis/resultado");
   }
 
@@ -329,6 +332,7 @@ export function Wizard() {
                 </div>
               )}
             </fieldset>
+            <ContactOptIn className="sm:col-span-2" />
           </>)}
         </div>
 

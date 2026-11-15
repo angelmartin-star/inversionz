@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { quickYield, type QuickYieldInput } from "@/lib/engine/quickYield";
 import { eur, num, pct } from "@/lib/format";
 import { Button, NumberField, TextField } from "@/components/ui/primitives";
+import { ContactOptIn } from "@/components/leads/ContactOptIn";
+import { notifyLead } from "@/lib/leads/notify";
 
 const KEY = "inversionz:rapida";
 const DRAFT_KEY = "inversionq:borrador";
@@ -18,8 +20,18 @@ export function QuickYield() {
   useEffect(() => { if (loaded) try { localStorage.setItem(KEY, JSON.stringify(q)); } catch { /* */ } }, [q, loaded]);
   const set = (p: Partial<QuickYieldInput>) => setQ((x) => ({ ...x, ...p }));
   const r = useMemo(() => quickYield(q), [q]);
+  const summary = r ? { "Rentabilidad bruta": pct(r.grossYield), "Rentabilidad neta": pct(r.netYield), "Ingreso neto anual": eur(r.netAnnualIncome) } : undefined;
+
+  // Aviso a BM cuando el usuario deja de tocar el formulario 20 s con un resultado válido
+  useEffect(() => {
+    if (!loaded || !r) return;
+    const t = setTimeout(() => notifyLead("rentabilidad", q, summary), 20_000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, loaded, r]);
 
   function fullAnalysis() {
+    if (r) notifyLead("rentabilidad", q, summary);
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       const d = raw ? JSON.parse(raw) : {};
@@ -45,6 +57,7 @@ export function QuickYield() {
           <NumberField label="Tasa de basuras" unit="€/año" decimals={0} value={q.wasteTax} onChange={(v) => set({ wasteTax: v ?? 0 })} />
           <TextField label="Código postal (opcional)" inputMode="numeric" maxLength={5} value={q.postalCode ?? ""} onChange={(v) => set({ postalCode: v.replace(/\D/g, "") })}
             hint={r?.provinceName ? `Sumamos el ITP de ${r.provinceName}` : "Para sumar el ITP de la provincia a la inversión"} />
+          <ContactOptIn />
         </div>
 
         <section aria-live="polite" aria-labelledby="qr-t" className="md:sticky md:top-6 md:self-start">

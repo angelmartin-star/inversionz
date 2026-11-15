@@ -12,6 +12,9 @@ import { DEFAULT_VALUATION_SETTINGS, runValuation } from "@/lib/valuation/valuat
 import { getProvinceFromPostalCode } from "@/lib/tax/provinces";
 import { eur, formatInputNumber, num, parseNumberEs, pct, placeLabel } from "@/lib/format";
 import { Button, NumberField, Segmented, TextField, cn } from "@/components/ui/primitives";
+import { ContactOptIn } from "@/components/leads/ContactOptIn";
+import { notifyLead } from "@/lib/leads/notify";
+import { IDEALISTA_REFERENCE_MONTH, IDEALISTA_REFERENCE_URL, MADRID_DISTRICTS, districtFromPostalCode, idealistaApproximation } from "@/lib/valuation/idealistaReference";
 
 const KEY = "inversionz:valoracion";
 const DRAFT_KEY = "inversionq:borrador";
@@ -68,6 +71,21 @@ export function ValuationTool() {
     try { return runValuation(v); } catch { return null; }
   }, [v, s.areaM2]);
 
+  const [districtPick, setDistrictPick] = useState<string>("");
+  const cpDistrict = districtFromPostalCode(s.postalCode);
+  const district = districtPick || cpDistrict || "";
+  const approx = useMemo(() => idealistaApproximation(s.areaM2, district || null, s.condition ?? "BUEN_ESTADO", v.settings.listingDiscount),
+    [s.areaM2, district, s.condition, v.settings.listingDiscount]);
+
+  const leadSummary = result?.estimatedValue ? { "Valor estimado": eur(Math.round(result.estimatedValue / 1000) * 1000), "Precio medio ajustado (€/m²)": result.averagePriceM2 ?? null,
+    ...(approx ? { "Aproximación idealista": eur(approx.value), "Distrito": approx.district } : {}) } : approx ? { "Aproximación idealista": eur(approx.value), "Distrito": approx.district } : undefined;
+  useEffect(() => {
+    if (!loaded || isExample || !(result?.estimatedValue || approx)) return;
+    const t = setTimeout(() => notifyLead("valoracion", v, leadSummary), 20_000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [v, loaded, isExample, result?.estimatedValue, approx?.value]);
+
   const setSubject = (patch: Partial<ValuationInput["subject"]>) => { setIsExample(false); setV((x) => ({ ...x, subject: { ...x.subject, ...patch } })); };
   const setAddr = (patch: Partial<NonNullable<ValuationInput["subject"]["address"]>>) =>
     setSubject({ address: { street: "", number: "", ...s.address, ...patch } });
@@ -78,6 +96,7 @@ export function ValuationTool() {
   const setSettings = (patch: Partial<ValuationInput["settings"]>) => setV((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
 
   function analyzeInvestment() {
+    if (!isExample && result?.estimatedValue) notifyLead("valoracion", v, leadSummary);
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       const d = raw ? JSON.parse(raw) : {};
@@ -217,10 +236,37 @@ export function ValuationTool() {
                 onChange={(x) => setSettings({ demandAdjustment: { ...v.settings.demandAdjustment, BAJA: -(x ?? 0) } })} hint="Se resta" />
             </div>
           </details>
+          <ContactOptIn className="mt-10" />
         </div>
 
         {/* Resultado */}
         <aside aria-live="polite" className="lg:sticky lg:top-6 lg:self-start">
+          <div className="mb-6 rounded-md border border-linea bg-white p-6">
+            <h2 className="text-sm font-semibold text-tinta-2">Aproximación con datos de idealista</h2>
+            <label className="mt-3 block text-xs text-tinta-3" htmlFor="ide-distrito">Distrito de Madrid</label>
+            <select id="ide-distrito" className="mt-1 w-full rounded-md border border-linea bg-white px-3 py-2 text-sm"
+              value={district} onChange={(e) => setDistrictPick(e.target.value)}>
+              <option value="">{s.postalCode ? "Código postal fuera de Madrid capital" : "Elige el distrito o indica el código postal"}</option>
+              {MADRID_DISTRICTS.map((d) => <option key={d.district} value={d.district}>{d.district} · {num(d.priceM2)} €/m²</option>)}
+            </select>
+            {approx ? (<>
+              <p className="mt-4 text-3xl font-semibold tracking-tight">{eur(approx.value)}</p>
+              <p className="mt-1 text-sm text-tinta-2">Horquilla {eur(approx.low)} – {eur(approx.high)}</p>
+              <table className="mt-4 w-full text-xs text-tinta-2">
+                <tbody>
+                  <tr><td className="py-1">Precio medio en {approx.district} ({approx.month})</td><td className="py-1 text-right">{num(approx.zonePriceM2)} €/m²</td></tr>
+                  {approx.conditionAdj !== 0 && <tr><td className="py-1">Ajuste por estado</td><td className="py-1 text-right">{signedPct(approx.conditionAdj)}</td></tr>}
+                  <tr><td className="py-1">Corrección del precio publicado</td><td className="py-1 text-right">−{pct(approx.listingDiscount, 0)}</td></tr>
+                  <tr><td className="py-1 font-medium text-tinta">Precio aplicado × {num(s.areaM2)} m²</td><td className="py-1 text-right font-medium text-tinta">{num(approx.priceM2)} €/m²</td></tr>
+                </tbody>
+              </table>
+            </>) : (
+              <p className="mt-3 text-sm text-tinta-2">Indica la superficie y el distrito para ver una primera aproximación sin testigos.</p>
+            )}
+            <p className="mt-3 text-xs text-tinta-3">
+              Media de la zona según el <a className="underline" href={IDEALISTA_REFERENCE_URL} target="_blank" rel="noopener">informe de precios de idealista</a> ({IDEALISTA_REFERENCE_MONTH}). Para afinar, añade testigos abajo.
+            </p>
+          </div>
           <div className="rounded-md border border-tinta bg-white p-6">
             <h2 className="text-sm font-semibold text-tinta-2">Valor estimado</h2>
             {result?.estimatedValue ? (<>

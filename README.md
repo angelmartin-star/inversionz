@@ -43,3 +43,19 @@ Arquitectura y decisiones: `ARQUITECTURA.md`.
 ## Aviso
 
 Cálculo orientativo con la normativa vigente en la versión de tablas indicada en cada informe. No sustituye el asesoramiento fiscal profesional.
+
+## Avisos por correo (leads)
+
+Cada vez que alguien completa el análisis, la valoración o la rentabilidad rápida, `/api/lead` envía los datos a **contacto@bminversiones.es** (con nombre, email y teléfono solo si el usuario los deja y acepta la política de privacidad).
+
+Variables en Vercel → Settings → Environment Variables:
+
+| Variable | Valor |
+|---|---|
+| `RESEND_API_KEY` | Clave de [Resend](https://resend.com) (obligatoria) |
+| `LEAD_TO` | Opcional. Por defecto `contacto@bminversiones.es` |
+| `LEAD_FROM` | Opcional. Por defecto `InversionZ <onboarding@resend.dev>`; con el dominio verificado, p. ej. `InversionZ <avisos@bminversiones.es>` |
+
+## Aproximación con idealista
+
+`src/lib/valuation/idealistaReference.ts` guarda el precio medio €/m² por distrito de Madrid del informe mensual de idealista. Actualízalo cada mes; cuando haya acceso a la API de idealista/data, se sustituye por `IdealistaApiProvider`.
