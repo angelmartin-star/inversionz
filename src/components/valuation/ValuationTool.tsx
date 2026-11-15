@@ -236,7 +236,7 @@ export function ValuationTool() {
                 onChange={(x) => setSettings({ demandAdjustment: { ...v.settings.demandAdjustment, BAJA: -(x ?? 0) } })} hint="Se resta" />
             </div>
           </details>
-          <ContactOptIn className="mt-10" />
+          <ContactOptIn className="mt-10" onSend={() => notifyLead("valoracion", v, leadSummary, { force: true })} />
         </div>
 
         {/* Resultado */}

@@ -57,7 +57,7 @@ export function QuickYield() {
           <NumberField label="Tasa de basuras" unit="€/año" decimals={0} value={q.wasteTax} onChange={(v) => set({ wasteTax: v ?? 0 })} />
           <TextField label="Código postal (opcional)" inputMode="numeric" maxLength={5} value={q.postalCode ?? ""} onChange={(v) => set({ postalCode: v.replace(/\D/g, "") })}
             hint={r?.provinceName ? `Sumamos el ITP de ${r.provinceName}` : "Para sumar el ITP de la provincia a la inversión"} />
-          <ContactOptIn />
+          <ContactOptIn onSend={() => notifyLead("rentabilidad", q, summary, { force: true })} />
         </div>
 
         <section aria-live="polite" aria-labelledby="qr-t" className="md:sticky md:top-6 md:self-start">

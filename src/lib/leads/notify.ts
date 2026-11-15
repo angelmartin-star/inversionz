@@ -20,7 +20,9 @@ function hash(s: string) {
   return (h >>> 0).toString(36);
 }
 
-export function notifyLead(tool: LeadTool, data: object, summary?: Record<string, string | number | null>) {
+export async function notifyLead(
+  tool: LeadTool, data: object, summary?: Record<string, string | number | null>, opts: { force?: boolean } = {},
+): Promise<boolean> {
   try {
     const c = loadContact();
     const contact = c.consent && (c.name || c.email || c.phone)
@@ -28,9 +30,10 @@ export function notifyLead(tool: LeadTool, data: object, summary?: Record<string
       : undefined;
     const body = JSON.stringify({ tool, data, summary, contact, page: location.pathname });
     const key = `inversionz:lead:${tool}:${hash(body.replace(/"page":"[^"]*"/, ""))}`;
-    if (sessionStorage.getItem(key)) return;
+    if (!opts.force && sessionStorage.getItem(key)) return true;
     sessionStorage.setItem(key, "1");
     // keepalive: el envío sigue aunque la página navegue a resultados
-    void fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
-  } catch { /* sin almacenamiento o sin red: no bloquear al usuario */ }
+    const res = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true });
+    return res.ok;
+  } catch { return false; /* sin almacenamiento o sin red: no bloquear al usuario */ }
 }

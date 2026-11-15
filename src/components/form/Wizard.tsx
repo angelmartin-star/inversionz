@@ -332,7 +332,7 @@ export function Wizard() {
                 </div>
               )}
             </fieldset>
-            <ContactOptIn className="sm:col-span-2" />
+            <ContactOptIn className="sm:col-span-2" onSend={() => notifyLead("analisis", draft, undefined, { force: true })} />
           </>)}
         </div>
 
