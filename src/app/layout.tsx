@@ -20,6 +20,14 @@ const NAV = [
   { href: "/rentabilidad", label: "Rentabilidad rápida" },
 ];
 
+/** Páginas legales de BM Real Estate Inversiones */
+const LEGAL = [
+  { label: "Política de privacidad", href: "https://www.bminversiones.es/privacy_policy/" },
+  { label: "Aviso legal", href: "https://www.bminversiones.es/terms_of_use/" },
+  { label: "Política de cookies", href: "https://www.bminversiones.es/cookie_policy/" },
+  { label: "Preferencias de cookies", href: "https://www.bminversiones.es/cookie_policy/#" },
+];
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="h-full">
@@ -36,6 +44,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="flex-1">{children}</main>
         <footer className="no-print border-t border-linea py-6 text-center text-xs text-tinta-3">
+          <nav aria-label="Información legal" className="mb-3 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-tinta-2">
+            {LEGAL.map((l) => (
+              <a key={l.label} href={l.href} target="_blank" rel="noopener" className="underline-offset-2 hover:text-tinta hover:underline">{l.label}</a>
+            ))}
+          </nav>
           Cálculo orientativo con la normativa fiscal vigente. No sustituye el asesoramiento de un profesional.
         </footer>
       </body>
