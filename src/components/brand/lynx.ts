@@ -1,0 +1,10 @@
+/** Trazados del símbolo de InversionZ (lince ibérico de perfil). viewBox "40 2 140 196". Fuente: lienzo "Logo InversionZ". */
+export const BRAND = { primary: "#0F2A44", accent: "#0E8F6F", light: "#1FC79A" };
+export const LYNX_VIEWBOX = "40 2 140 196";
+export const LYNX = {
+  tufts: "M126 26 L131 4 M98 30 L101 8",
+  head: "M172 98 L160 88 Q154 78 144 74 L138 62 L125 20 L110 52 L97 26 L84 62 Q60 74 54 108 Q50 144 74 180 L82 196 Q96 172 114 160 L140 160 L128 150 L154 142 L141 135 L155 124 Q160 116 160 110 L170 106 Z",
+  cutouts: "M124 34 L116 52 L132 60 Z M94 64 Q66 106 104 124 Q134 134 162 108 Q132 122 106 112 Q82 98 94 64 Z M62 116 Q66 160 116 166 Q86 176 70 158 Q54 140 62 116 Z",
+  eye: "M128 88 L158 82 L146 92 Q136 94 128 88 Z",
+  brow: "M126 80 Q142 72 160 80",
+};

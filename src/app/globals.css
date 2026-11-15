@@ -4,20 +4,20 @@
  * InversionZ — tokens
  * Inspiración: plano catastral y escritura notarial.
  *  papel  #F6F7F4  fondo frío, como el papel de un plano
- *  tinta  #15233F  texto y estructura (azul tinta de escritura)
+ *  tinta  #0F2A44  texto y estructura (azul marino del logo)
  *  linea  #D3D9D4  retícula de parcelas
- *  parcela#1F7A4D  importes a favor
+ *  parcela#0E8F6F  importes a favor (verde del logo)
  *  sello  #B3261E  impuestos y salidas de dinero
  *  plano  #3A6EA5  datos neutros en gráficos
  */
 @theme {
   --color-papel: #f6f7f4;
   --color-papel-2: #eceee9;
-  --color-tinta: #15233f;
+  --color-tinta: #0f2a44;            /* azul marino del logo */
   --color-tinta-2: #4a566b;
   --color-tinta-3: #6e7889;
   --color-linea: #d3d9d4;
-  --color-parcela: #1f7a4d;
+  --color-parcela: #0e8f6f;          /* verde del logo */
   --color-parcela-claro: #e3efe7;
   --color-sello: #b3261e;
   --color-sello-claro: #f6e4e2;

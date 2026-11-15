@@ -4,7 +4,8 @@
  * Gráficos dibujados con primitivas (View/Svg) para que el PDF sea vectorial y ligero.
  */
 import path from "node:path";
-import { Document, Font, Page, Rect, StyleSheet, Svg, Text, View, Line } from "@react-pdf/renderer";
+import { Document, Font, Page, Path, Rect, StyleSheet, Svg, Text, View, Line } from "@react-pdf/renderer";
+import { BRAND, LYNX, LYNX_VIEWBOX } from "@/components/brand/lynx";
 import type { InvestmentAnalysisResult, InvestmentInput, TaxPayment } from "@/types/investment";
 import { buildLedgerRows } from "@/components/dashboard/Ledger";
 import { eur, formatAddress, num, pct, placeLabel, signedEur } from "@/lib/format";
@@ -20,9 +21,10 @@ Font.register({
     { src: path.join(FONT_DIR, "ibm-plex-sans-latin-700-normal.woff"), fontWeight: 700 },
   ],
 });
+Font.register({ family: "Jakarta", src: path.join(FONT_DIR, "plus-jakarta-sans-latin-800-normal.woff"), fontWeight: 800 });
 Font.registerHyphenationCallback((w) => [w]);
 
-const C = { papel: "#f6f7f4", tinta: "#15233f", tinta2: "#4a566b", tinta3: "#6e7889", linea: "#d3d9d4", parcela: "#1f7a4d", sello: "#b3261e", plano: "#3a6ea5", parcelaClaro: "#e3efe7" };
+const C = { papel: "#f6f7f4", tinta: BRAND.primary, tinta2: "#4a566b", tinta3: "#6e7889", linea: "#d3d9d4", parcela: BRAND.accent, sello: "#b3261e", plano: "#3a6ea5", parcelaClaro: "#e3efe7" };
 
 const s = StyleSheet.create({
   page: { fontFamily: "Plex", fontSize: 9, color: C.tinta, paddingTop: 36, paddingBottom: 48, paddingHorizontal: 40, lineHeight: 1.35 },
@@ -151,7 +153,18 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
       {/* Página 1: resumen */}
       <Page size="A4" style={s.page}>
         <View style={s.band}>
-          <Text style={s.brand}>InversionZ. Informe de viabilidad, {date}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+              <Svg width={20} height={28} viewBox={LYNX_VIEWBOX}>
+                <Path d={LYNX.tufts} stroke="#FFFFFF" strokeWidth={4} strokeLinecap="round" fill="none" />
+                <Path d={LYNX.head} fill="#FFFFFF" stroke="#FFFFFF" strokeWidth={2} />
+                <Path d={LYNX.cutouts} fill={BRAND.primary} />
+                <Path d={LYNX.eye} fill={BRAND.light} />
+              </Svg>
+              <Text style={{ fontFamily: "Jakarta", fontWeight: 800, fontSize: 15, color: "#FFFFFF" }}>Inversion<Text style={{ color: BRAND.light }}>Z</Text></Text>
+            </View>
+            <Text style={s.brand}>Informe de viabilidad, {date}</Text>
+          </View>
           <Text style={s.title}>Piso de {num(p.surfaceM2)} m² {CONDITION[p.condition]} en {placeLabel(p.municipality, result.province.name)} por {eur(p.purchasePrice)}</Text>
           {p.address?.street ? <Text style={s.subtitle}>{formatAddress(p.address)}. {p.postalCode} {placeLabel(p.municipality, result.province.name)}</Text> : null}
           {p.cadastre?.refCat ? <Text style={s.subtitle}>Referencia catastral {p.cadastre.refCat}{p.cadastre.use ? `. Uso ${p.cadastre.use.toLowerCase()}` : ""}{p.cadastre.yearBuilt ? `, construido en ${p.cadastre.yearBuilt}` : ""}.</Text> : null}

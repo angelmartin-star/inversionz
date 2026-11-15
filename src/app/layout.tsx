@@ -3,8 +3,10 @@ import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
 import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
 import Link from "next/link";
+import { Logo } from "@/components/brand/Logo";
 
 export const metadata: Metadata = {
   title: "InversionZ — Análisis, valoración y rentabilidad de inmuebles",
@@ -24,12 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col">
         <header className="no-print border-b border-linea bg-papel">
           <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-2">
-            <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-              <span aria-hidden className="grid h-6 w-6 grid-cols-2 gap-px rounded-sm bg-tinta p-[3px]">
-                <span className="bg-papel" /><span className="bg-parcela" />
-                <span className="bg-parcela" /><span className="bg-papel" />
-              </span>
-              InversionZ
+            <Link href="/" aria-label="InversionZ, inicio" className="py-1">
+              <Logo size={32} background="#f6f7f4" />
             </Link>
             <nav aria-label="Herramientas" className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium text-tinta-2">
               {NAV.map((n) => <Link key={n.href} href={n.href} className="hover:text-tinta">{n.label}</Link>)}
