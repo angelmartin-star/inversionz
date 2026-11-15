@@ -23,6 +23,10 @@
   --color-sello-claro: #f6e4e2;
   --color-plano: #3a6ea5;
   --color-plano-claro: #e2eaf3;
+  /* Colores de los cuadrados de la M de BM (Manual de marca BM) */
+  --color-bm-azul: #323e90;
+  --color-bm-celeste: #41b5e5;
+  --color-bm-verde: #dce070;
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: 4px;
   --radius-md: 6px;

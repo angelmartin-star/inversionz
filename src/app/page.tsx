@@ -3,22 +3,22 @@ import { runInvestmentAnalysis } from "@/lib/engine/calculationEngine";
 import { EXAMPLE_INPUT } from "@/lib/defaults";
 import { Ledger } from "@/components/dashboard/Ledger";
 import { LynxMark } from "@/components/brand/Logo";
-import { buttonVariants, cn } from "@/lib/ui";
+import { buttonVariants } from "@/lib/ui";
 import { eur, pct } from "@/lib/format";
 
 const TOOLS = [
   {
-    href: "/analisis/nuevo", title: "Análisis de inversión", cta: "Hacer un análisis",
+    href: "/analisis/nuevo", title: "Análisis de inversión", cta: "Hacer un análisis", color: "bmAzul" as const,
     text: "El estudio completo: impuestos de compra de la provincia, hipoteca, gastos, IRPF del alquiler año a año, venta con plusvalías e informe en PDF.",
     asks: "inmueble, compra, hipoteca, alquiler y venta",
   },
   {
-    href: "/valoracion", title: "Valoración", cta: "Valorar un inmueble",
+    href: "/valoracion", title: "Valoración", cta: "Valorar un inmueble", color: "bmCeleste" as const,
     text: "Cuánto vale con anuncios comparables de Idealista, Fotocasa y pisos.com, ajustados por la demanda de cada portal y un 10 % de negociación.",
     asks: "superficie y de 3 a 5 testigos por portal",
   },
   {
-    href: "/rentabilidad", title: "Rentabilidad rápida", cta: "Calcular en un minuto",
+    href: "/rentabilidad", title: "Rentabilidad rápida", cta: "Calcular en un minuto", color: "bmVerde" as const,
     text: "La rentabilidad bruta y neta de un piso en alquiler, con el ITP de la provincia si indicas el código postal.",
     asks: "precio, alquiler, IBI, comunidad y basuras",
   },
@@ -43,13 +43,13 @@ export default function Home() {
           </div>
 
           <ol className="mt-10 grid gap-px overflow-hidden rounded-md border border-linea bg-linea md:grid-cols-3">
-            {TOOLS.map((t, i) => (
-              <li key={t.href} className={cn("flex flex-col bg-white p-6", i === 0 && "md:bg-tinta md:text-papel")}>
+            {TOOLS.map((t) => (
+              <li key={t.href} className="flex flex-col bg-white p-6">
                 <h2 className="text-xl font-semibold">{t.title}</h2>
-                <p className={cn("mt-2 text-[15px]", i === 0 ? "text-tinta-2 md:text-papel/80" : "text-tinta-2")}>{t.text}</p>
-                <p className={cn("mt-4 text-sm", i === 0 ? "text-tinta-3 md:text-papel/60" : "text-tinta-3")}>Necesitas: {t.asks}.</p>
+                <p className="mt-2 text-[15px] text-tinta-2">{t.text}</p>
+                <p className="mt-4 text-sm text-tinta-3">Necesitas: {t.asks}.</p>
                 <div className="mt-auto pt-6">
-                  <Link href={t.href} className={cn(buttonVariants({ variant: i === 0 ? "primary" : "secondary" }), i === 0 && "md:bg-papel md:text-tinta md:hover:bg-white")}>{t.cta}</Link>
+                  <Link href={t.href} className={buttonVariants({ variant: t.color, size: "lg" })}>{t.cta}</Link>
                 </div>
               </li>
             ))}
