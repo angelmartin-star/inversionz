@@ -2,6 +2,7 @@ import Link from "next/link";
 import { runInvestmentAnalysis } from "@/lib/engine/calculationEngine";
 import { EXAMPLE_INPUT } from "@/lib/defaults";
 import { Ledger } from "@/components/dashboard/Ledger";
+import { LynxMark } from "@/components/brand/Logo";
 import { buttonVariants, cn } from "@/lib/ui";
 import { eur, pct } from "@/lib/format";
 
@@ -29,10 +30,17 @@ export default function Home() {
     <>
       <section className="reticula border-b border-linea">
         <div className="mx-auto max-w-6xl px-5 pt-14 pb-12 lg:pt-20">
-          <h1 className="max-w-[22ch] text-4xl leading-[1.08] font-semibold tracking-tight sm:text-5xl">
-            Lo que vale un piso y lo que te deja, con los impuestos de su provincia.
-          </h1>
-          <p className="mt-5 max-w-[56ch] text-lg text-tinta-2">Tres herramientas para invertir en vivienda en España. Empieza por la que necesites.</p>
+          <div className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_auto]">
+            <div>
+              <h1 className="max-w-[22ch] text-4xl leading-[1.08] font-semibold tracking-tight sm:text-5xl">
+                Lo que vale un piso y lo que te deja, con los impuestos de su provincia.
+              </h1>
+              <p className="mt-5 max-w-[56ch] text-lg text-tinta-2">Tres herramientas para invertir en vivienda en España. Empieza por la que necesites.</p>
+            </div>
+            <div className="hidden justify-self-center md:block md:pr-8 lg:pr-16">
+              <LynxMark size={300} background="#f6f7f4" />
+            </div>
+          </div>
 
           <ol className="mt-10 grid gap-px overflow-hidden rounded-md border border-linea bg-linea md:grid-cols-3">
             {TOOLS.map((t, i) => (
