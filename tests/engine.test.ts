@@ -46,5 +46,17 @@ near(r.acquisitionTaxes.total, 15_000, 0.01, 'ITP Madrid');
 near(r.kpis.totalInvestment, 250_000 + 15_000 + 2_000 + 25_000 + 6_000, 0.01, 'inversión');
 assert.equal(r.irpfYear1.reductionRate, 0.5);
 assert.ok(r.sale.municipalCapitalGain.rate === 0.29);
+// --- Exenciones vivienda habitual en la venta ---
+const base = runInvestmentAnalysis(input).sale.capitalGain;
+const hab65 = runInvestmentAnalysis({ ...input, sale: { ...input.sale, sellerHabitualResidence: true, sellerAged65Plus: true } }).sale.capitalGain;
+assert.equal(hab65.tax, 0); near(hab65.exemptGain, base.gain, 0.01, 'exención total >65');
+const reinv = runInvestmentAnalysis({ ...input, sale: { ...input.sale, sellerHabitualResidence: true, reinvestmentAmount: 100_000 } });
+const cg = reinv.sale.capitalGain;
+const obtained = cg.transmissionValue - reinv.sale.outstandingMortgage;
+near(cg.exemptGain, cg.gain * Math.min(100_000 / obtained, 1), 0.01, 'exención proporcional reinversión');
+assert.ok(cg.tax < base.tax);
+const noHab = runInvestmentAnalysis({ ...input, sale: { ...input.sale, sellerHabitualResidence: false, sellerAged65Plus: true } }).sale.capitalGain;
+assert.equal(noHab.exemption, 'NINGUNA');
+
 console.log(JSON.stringify({ kpis: r.kpis, irpfYear1: r.irpfYear1, sale: r.sale, taxPayments: r.taxPayments, warnings: r.warnings }, null, 2));
 console.log('\n✅ Todos los tests OK');

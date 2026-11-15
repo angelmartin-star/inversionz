@@ -296,6 +296,32 @@ export function Wizard() {
               hint="Opcional. Si lo dejas vacío usamos el de tu ayuntamiento si lo conocemos, o el máximo legal (30 %)" />
             <NumberField label="Otras ganancias o rentas del ahorro ese año" unit="€" decimals={0} value={draft.rental.investorSavingsTaxBaseInSaleYear}
               onChange={(v) => set("rental", { investorSavingsTaxBaseInSaleYear: v ?? 0 })} hint="Dividendos, intereses, otras ventas. Afecta al tramo del IRPF de la venta" />
+
+            <fieldset className="sm:col-span-2 rounded-md border border-linea bg-white p-5">
+              <legend className="px-1 text-sm font-medium">IRPF del vendedor: ¿es su vivienda habitual?</legend>
+              <div className="mt-1">
+                <Segmented<"NO" | "SI"> label="Cuando la vendas, ¿será tu vivienda habitual?" value={draft.sale.sellerHabitualResidence ? "SI" : "NO"}
+                  onChange={(v) => set("sale", { sellerHabitualResidence: v === "SI" })}
+                  hint="Vivienda habitual: has vivido en ella al menos 3 años seguidos. Si la tienes alquilada, no lo es."
+                  options={[
+                    { value: "NO", label: "Vivienda no habitual", description: "Inversión o segunda residencia" },
+                    { value: "SI", label: "Vivienda habitual", description: "Vives en ella" },
+                  ]} />
+              </div>
+              {draft.sale.sellerHabitualResidence && (
+                <div className="mt-5 grid gap-x-6 gap-y-5 sm:grid-cols-2">
+                  <div className="self-center">
+                    <Toggle label="Tendré 65 años o más al vender" checked={!!draft.sale.sellerAged65Plus} onChange={(v) => set("sale", { sellerAged65Plus: v })}
+                      description="La ganancia queda exenta por completo" />
+                  </div>
+                  {!draft.sale.sellerAged65Plus && (
+                    <NumberField label="Reinvertiré en otra vivienda habitual" unit="€" decimals={0} value={draft.sale.reinvestmentAmount}
+                      onChange={(v) => set("sale", { reinvestmentAmount: v })}
+                      hint="Importe que destinarás a comprar tu nueva vivienda habitual en los 2 años siguientes. Queda exenta la parte proporcional" />
+                  )}
+                </div>
+              )}
+            </fieldset>
           </>)}
         </div>
 

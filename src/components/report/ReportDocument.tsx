@@ -282,11 +282,16 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.bold, { marginBottom: 4 }]}>Ganancia patrimonial (IRPF del ahorro)</Text>
+              <Text style={[s.muted, { marginBottom: 4 }]}>{input.sale.sellerHabitualResidence ? "Vivienda habitual del vendedor." : "Vivienda no habitual del vendedor."}</Text>
               <Lines rows={[
                 ["Valor de transmisión", cg.transmissionValue],
                 ["Valor de adquisición (con mejoras)", -(cg.acquisitionValue + cg.accumulatedAmortization)],
                 ["Amortizaciones aplicadas", cg.accumulatedAmortization],
                 ["Ganancia patrimonial", cg.gain, "sub"],
+                ...(cg.exemption !== "NINGUNA" ? [
+                  [cg.exemption === "MAYOR_65_VIVIENDA_HABITUAL" ? "Exención vivienda habitual (mayor de 65)" : "Exención por reinversión", -cg.exemptGain] as [string, number],
+                  ["Ganancia que tributa", cg.taxableGain, "sub"] as [string, number, "sub"],
+                ] : []),
                 [`IRPF (tipo medio ${pct(cg.effectiveRate, 1)})`, cg.tax, "total"],
               ]} />
             </View>

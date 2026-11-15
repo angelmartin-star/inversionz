@@ -91,6 +91,9 @@ export const saleSchema = z.object({
   otherSaleCosts: z.number().min(0).optional(),
   municipalCapitalGainRate: z.number().min(0).max(0.3, "El tipo máximo legal es 30 %").optional(),
   cadastralLandValueAnnualUpdate: z.number().min(-0.2).max(0.2).optional(),
+  sellerHabitualResidence: z.boolean().optional(),
+  sellerAged65Plus: z.boolean().optional(),
+  reinvestmentAmount: z.number().min(0).optional(),
 });
 
 export const investmentInputSchema = z.object({

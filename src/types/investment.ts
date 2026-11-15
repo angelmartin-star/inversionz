@@ -144,6 +144,12 @@ export interface SaleData {
   municipalCapitalGainRate?: number;
   /** Actualización anual estimada del valor catastral del suelo. Defecto 0 */
   cadastralLandValueAnnualUpdate?: number;
+  /** ¿Será la vivienda habitual del vendedor en el momento de la venta? (≥3 años residiendo) */
+  sellerHabitualResidence?: boolean;
+  /** Vendedor con 65 años o más al vender (exención total, art. 33.4.b LIRPF) */
+  sellerAged65Plus?: boolean;
+  /** Importe que reinvertirá en nueva vivienda habitual en 2 años (art. 38.1 LIRPF) */
+  reinvestmentAmount?: number;
 }
 
 export interface InvestmentInput {
@@ -236,11 +242,16 @@ export interface MunicipalCapitalGainResult {
   tax: number;
 }
 
+export type CapitalGainExemption = 'NINGUNA' | 'MAYOR_65_VIVIENDA_HABITUAL' | 'REINVERSION_VIVIENDA_HABITUAL';
+
 export interface CapitalGainResult {
   acquisitionValue: number;
   accumulatedAmortization: number;
   transmissionValue: number;
   gain: number;
+  exemption: CapitalGainExemption;
+  exemptGain: number;                 // parte de la ganancia exenta
+  taxableGain: number;                // parte que tributa en la base del ahorro
   tax: number;
   effectiveRate: number;
 }

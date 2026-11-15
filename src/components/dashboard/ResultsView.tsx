@@ -217,11 +217,16 @@ export function ResultsView() {
             </div>
             <div>
               <h3 className="font-semibold">Ganancia patrimonial en el IRPF</h3>
+              <p className="mt-1 mb-3 text-sm text-tinta-2">{input.sale.sellerHabitualResidence ? "Venta de tu vivienda habitual." : "Venta de una vivienda no habitual: la ganancia tributa entera."}</p>
               <LineTable rows={[
                 ["Valor de venta menos gastos y plusvalía", result.sale.capitalGain.transmissionValue],
                 ["Coste de compra, impuestos, gastos y mejoras", -(result.sale.capitalGain.acquisitionValue + result.sale.capitalGain.accumulatedAmortization)],
                 ["Amortizaciones aplicadas (aumentan la ganancia)", result.sale.capitalGain.accumulatedAmortization],
                 ["Ganancia patrimonial", result.sale.capitalGain.gain, "sub"],
+                ...(result.sale.capitalGain.exemption !== "NINGUNA" ? [
+                  [result.sale.capitalGain.exemption === "MAYOR_65_VIVIENDA_HABITUAL" ? "Exención: vivienda habitual, mayor de 65 años" : "Exención por reinversión en vivienda habitual", -result.sale.capitalGain.exemptGain] as [string, number],
+                  ["Ganancia que tributa", result.sale.capitalGain.taxableGain, "sub"] as [string, number, "sub"],
+                ] : []),
                 [`IRPF del ahorro (tipo medio ${pct(result.sale.capitalGain.effectiveRate, 1)})`, result.sale.capitalGain.tax, "total"],
               ]} />
             </div>

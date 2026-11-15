@@ -388,17 +388,39 @@ export function computeCapitalGain(params: {
   purchasePrice: number; acquisitionTaxes: number; closingCosts: number; improvements: number;
   accumulatedAmortization: number; salePrice: number; saleCosts: number; municipalTax: number;
   otherSavingsBase: number;
+  /** Vivienda habitual del vendedor al vender */
+  habitualResidence?: boolean; aged65Plus?: boolean; reinvestmentAmount?: number;
+  /** Principal del préstamo pendiente que se cancela con la venta (art. 41.2 RIRPF) */
+  outstandingLoan?: number;
 }): CapitalGainResult {
   const acquisitionValue = params.purchasePrice + params.acquisitionTaxes + params.closingCosts
     + params.improvements - params.accumulatedAmortization;
   const transmissionValue = params.salePrice - params.saleCosts - params.municipalTax;
   const gain = transmissionValue - acquisitionValue;
-  const tax = gain > 0
-    ? applyProgressiveScale(params.otherSavingsBase + gain, IRPF_SAVINGS) - applyProgressiveScale(params.otherSavingsBase, IRPF_SAVINGS)
+
+  // --- Exenciones por transmisión de vivienda habitual ----------------------
+  //  a) Mayor de 65 años: exención total (art. 33.4.b LIRPF).
+  //  b) Reinversión en nueva vivienda habitual en 2 años (art. 38.1 LIRPF): exenta la parte
+  //     proporcional reinvertido / importe total obtenido. Con préstamo pendiente, el importe
+  //     obtenido es el valor de transmisión menos el principal pendiente (art. 41.2 RIRPF).
+  let exemption: CapitalGainResult['exemption'] = 'NINGUNA';
+  let exemptGain = 0;
+  if (gain > 0 && params.habitualResidence) {
+    if (params.aged65Plus) {
+      exemption = 'MAYOR_65_VIVIENDA_HABITUAL'; exemptGain = gain;
+    } else if ((params.reinvestmentAmount ?? 0) > 0) {
+      const obtained = Math.max(transmissionValue - (params.outstandingLoan ?? 0), 0);
+      const ratio = obtained > 0 ? Math.min(params.reinvestmentAmount! / obtained, 1) : 1;
+      exemption = 'REINVERSION_VIVIENDA_HABITUAL'; exemptGain = gain * ratio;
+    }
+  }
+  const taxableGain = Math.max(gain - exemptGain, 0);
+  const tax = taxableGain > 0
+    ? applyProgressiveScale(params.otherSavingsBase + taxableGain, IRPF_SAVINGS) - applyProgressiveScale(params.otherSavingsBase, IRPF_SAVINGS)
     : 0;
   return {
     acquisitionValue, accumulatedAmortization: params.accumulatedAmortization, transmissionValue,
-    gain, tax, effectiveRate: gain > 0 ? tax / gain : 0,
+    gain, exemption, exemptGain, taxableGain, tax, effectiveRate: gain > 0 ? tax / gain : 0,
   };
 }
 
@@ -490,7 +512,15 @@ export function runInvestmentAnalysis(input: InvestmentInput): InvestmentAnalysi
     accumulatedAmortization: levered.accumulatedBuildingAmortization,
     salePrice: s.estimatedSalePrice, saleCosts, municipalTax: municipalCapitalGain.tax,
     otherSavingsBase: input.rental.investorSavingsTaxBaseInSaleYear ?? 0,
+    habitualResidence: s.sellerHabitualResidence, aged65Plus: s.sellerAged65Plus,
+    reinvestmentAmount: s.reinvestmentAmount,
+    outstandingLoan: mortgage ? (mortgage.years[N - 1]?.endingBalance ?? 0) : 0,
   });
+  if (s.sellerHabitualResidence) {
+    warnings.push('Vivienda habitual al vender: exige haber vivido en ella al menos 3 años seguidos y venderla mientras lo es o en los 2 años siguientes a dejar de serlo. La proyección asume alquiler todo el periodo: ajusta los años de alquiler si vas a vivir en ella.');
+    if (!s.sellerAged65Plus && !(s.reinvestmentAmount && s.reinvestmentAmount > 0))
+      warnings.push('Ser vivienda habitual no exime por sí solo: la ganancia queda exenta si tienes 65 años o más, o en la parte que reinviertas en otra vivienda habitual en 2 años.');
+  }
   if (capitalGain.gain < 0) warnings.push('La venta genera pérdida patrimonial: compensable con otras ganancias del ahorro (no modelado).');
   const outstandingMortgage = mortgage ? (mortgage.years[N - 1]?.endingBalance ?? 0) : 0;
   const netProceeds = s.estimatedSalePrice - saleCosts - municipalCapitalGain.tax - capitalGain.tax - outstandingMortgage;
@@ -571,7 +601,9 @@ export function buildTaxPayments(
       authority: city, form: 'Recibo municipal', deadline: 'Según calendario fiscal municipal' });
   out.push({ moment: 'VENTA', concept: `Plusvalía municipal (IIVTNU) — método ${iivtnu.chosenMethod.toLowerCase()}`, amount: iivtnu.tax,
     authority: city, form: 'Autoliquidación / declaración municipal', deadline: '30 días hábiles desde la transmisión (art. 110 TRLRHL)' });
-  out.push({ moment: 'VENTA', concept: 'IRPF — ganancia patrimonial (base del ahorro)', amount: gain.tax,
+  out.push({ moment: 'VENTA', concept: gain.exemption === 'NINGUNA' ? 'IRPF — ganancia patrimonial (base del ahorro)'
+      : `IRPF — ganancia patrimonial, con exención por vivienda habitual (${gain.exemption === 'MAYOR_65_VIVIENDA_HABITUAL' ? 'mayor de 65 años' : 'reinversión'})`,
+    amount: gain.tax,
     authority: irpfAuthority, form: province.isForalTerritory ? 'Declaración foral de IRPF' : 'Modelo 100 (Renta)',
     deadline: 'Campaña de la Renta del año siguiente a la venta' });
   return out;
