@@ -258,7 +258,7 @@ export function ValuationTool() {
             {result && result.warnings.length > 0 && (
               <ul className="mt-4 grid gap-1.5 text-xs text-tinta-2">{result.warnings.map((w, i) => <li key={i} className="border-l-2 border-linea pl-2">{w}</li>)}</ul>
             )}
-            <Button className="mt-6 w-full" variant={result?.estimatedValue ? "primary" : "secondary"} disabled={!(s.areaM2 > 0)} onClick={analyzeInvestment}>
+            <Button className="mt-6 w-full" variant={result?.estimatedValue ? "bmCeleste" : "secondary"} disabled={!(s.areaM2 > 0)} onClick={analyzeInvestment}>
               Analizar la inversión de este inmueble
             </Button>
           </div>

@@ -108,7 +108,7 @@ export function CatastroLookup({ property, provinceCode, onApply }: Props) {
           </div>
           {selected !== null && (
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Button type="button" onClick={() => onApply(result.units[selected])}>Usar estos datos</Button>
+              <Button type="button" variant="bmAzul" onClick={() => onApply(result.units[selected])}>Usar estos datos</Button>
               <a href={result.units[selected].mapUrl} target="_blank" rel="noreferrer" className="text-sm text-plano underline-offset-2 hover:underline">Ver la parcela en la Sede del Catastro</a>
             </div>
           )}

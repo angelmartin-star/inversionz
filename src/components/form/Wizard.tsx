@@ -336,7 +336,7 @@ export function Wizard() {
           <Button variant="ghost" onClick={() => { setErrors({}); setStep(Math.max(0, step - 1)); }} disabled={step === 0}>Atrás</Button>
           <div className="flex items-center gap-4">
             {Object.keys(errors).length > 0 && <p role="alert" className="text-sm text-sello">Revisa los campos marcados</p>}
-            <Button size="lg" onClick={next}>{step === STEPS.length - 1 ? "Ver el análisis" : "Siguiente"}</Button>
+            <Button size="lg" variant="bmAzul" onClick={next}>{step === STEPS.length - 1 ? "Ver el análisis" : "Siguiente"}</Button>
           </div>
         </div>
         <button type="button" className="mt-6 text-xs text-tinta-3 hover:underline lg:hidden" onClick={() => { setDraft(EXAMPLE_INPUT); setErrors({}); }}>

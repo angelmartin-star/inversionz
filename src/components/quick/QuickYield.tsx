@@ -68,7 +68,7 @@ export function QuickYield() {
                   {r.paybackYears && <Row label="Años para recuperar la compra" value={`${num(r.paybackYears)} años`} />}
                 </tbody>
               </table>
-              <Button className="mt-6 w-full" variant="secondary" onClick={fullAnalysis}>Hacer el análisis completo</Button>
+              <Button className="mt-6 w-full" variant="bmVerde" onClick={fullAnalysis}>Hacer el análisis completo</Button>
             </div>
           ) : (
             <div className="rounded-md border border-dashed border-linea p-6 text-sm text-tinta-2">Indica el precio de compra y el alquiler mensual para ver la rentabilidad.</div>

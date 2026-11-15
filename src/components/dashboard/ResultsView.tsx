@@ -64,7 +64,7 @@ export function ResultsView() {
       <div className="mx-auto max-w-xl px-5 py-24 text-center">
         <h1 className="text-2xl font-semibold">{error ? "Hay datos que no cuadran" : "Todavía no hay ningún análisis"}</h1>
         <p className="mt-3 text-tinta-2">{error ?? "Introduce los datos del inmueble para ver su rentabilidad, impuestos y plusvalías."}</p>
-        <Link href="/analisis/nuevo" className={cn(buttonVariants({ size: "lg" }), "mt-8")}>{error ? "Revisar los datos" : "Empezar un análisis"}</Link>
+        <Link href="/analisis/nuevo" className={cn(buttonVariants({ size: "lg", variant: "bmAzul" }), "mt-8")}>{error ? "Revisar los datos" : "Empezar un análisis"}</Link>
       </div>
     );
   }
@@ -97,7 +97,7 @@ export function ResultsView() {
             </div>
             <div className="no-print flex gap-3">
               <Link href="/analisis/nuevo" className={buttonVariants({ variant: "secondary" })}>Editar datos</Link>
-              <Button onClick={downloadPdf} disabled={downloading}>{downloading ? "Generando informe…" : "Descargar informe PDF"}</Button>
+              <Button variant="bmAzul" onClick={downloadPdf} disabled={downloading}>{downloading ? "Generando informe…" : "Descargar informe PDF"}</Button>
             </div>
           </div>
           {pdfError && <p role="alert" className="mt-3 text-sm text-sello">{pdfError}</p>}
