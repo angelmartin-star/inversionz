@@ -14,7 +14,7 @@ import { eur, formatInputNumber, num, parseNumberEs, pct, placeLabel } from "@/l
 import { Button, NumberField, Segmented, TextField, cn } from "@/components/ui/primitives";
 import { ContactOptIn } from "@/components/leads/ContactOptIn";
 import { notifyLead } from "@/lib/leads/notify";
-import { IDEALISTA_REFERENCE_MONTH, IDEALISTA_REFERENCE_URL, MADRID_DISTRICTS, districtFromPostalCode, idealistaApproximation } from "@/lib/valuation/idealistaReference";
+import { IDEALISTA_REFERENCE_MONTH, MADRID_DISTRICTS, districtFromPostalCode, idealistaApproximation } from "@/lib/valuation/idealistaReference";
 
 const KEY = "inversionz:valoracion";
 const DRAFT_KEY = "inversionq:borrador";
@@ -78,7 +78,7 @@ export function ValuationTool() {
     [s.areaM2, district, s.condition, v.settings.listingDiscount]);
 
   const leadSummary = result?.estimatedValue ? { "Valor estimado": eur(Math.round(result.estimatedValue / 1000) * 1000), "Precio medio ajustado (€/m²)": result.averagePriceM2 ?? null,
-    ...(approx ? { "Aproximación idealista": eur(approx.value), "Distrito": approx.district } : {}) } : approx ? { "Aproximación idealista": eur(approx.value), "Distrito": approx.district } : undefined;
+    ...(approx ? { "Aproximación por zona": eur(approx.value), "Distrito": approx.district } : {}) } : approx ? { "Aproximación por zona": eur(approx.value), "Distrito": approx.district } : undefined;
   useEffect(() => {
     if (!loaded || isExample || !(result?.estimatedValue || approx)) return;
     const t = setTimeout(() => notifyLead("valoracion", v, leadSummary), 20_000);
@@ -242,7 +242,7 @@ export function ValuationTool() {
         {/* Resultado */}
         <aside aria-live="polite" className="lg:sticky lg:top-6 lg:self-start">
           <div className="mb-6 rounded-md border border-linea bg-white p-6">
-            <h2 className="text-sm font-semibold text-tinta-2">Aproximación con datos de idealista</h2>
+            <h2 className="text-sm font-semibold text-tinta-2">Aproximación por zona</h2>
             <label className="mt-3 block text-xs text-tinta-3" htmlFor="ide-distrito">Distrito de Madrid</label>
             <select id="ide-distrito" className="mt-1 w-full rounded-md border border-linea bg-white px-3 py-2 text-sm"
               value={district} onChange={(e) => setDistrictPick(e.target.value)}>
@@ -264,7 +264,7 @@ export function ValuationTool() {
               <p className="mt-3 text-sm text-tinta-2">Indica la superficie y el distrito para ver una primera aproximación sin testigos.</p>
             )}
             <p className="mt-3 text-xs text-tinta-3">
-              Media de la zona según el <a className="underline" href={IDEALISTA_REFERENCE_URL} target="_blank" rel="noopener">informe de precios de idealista</a> ({IDEALISTA_REFERENCE_MONTH}). Para afinar, añade testigos abajo.
+              Precio medio de oferta del distrito ({IDEALISTA_REFERENCE_MONTH}). Para afinar, añade testigos abajo.
             </p>
           </div>
           <div className="rounded-md border border-tinta bg-white p-6">
