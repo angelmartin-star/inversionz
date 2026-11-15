@@ -52,7 +52,7 @@ export function ResultsView() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = `InversionQ-${input.property.postalCode}-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.href = url; a.download = `InversionZ-${input.property.postalCode}-${new Date().toISOString().slice(0, 10)}.pdf`;
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     } catch (e) { setPdfError(`No se pudo generar el PDF: ${(e as Error).message}`); }
     finally { setDownloading(false); }

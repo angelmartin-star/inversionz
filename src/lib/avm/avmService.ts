@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  InversionQ — Módulo de Valoración Automática (AVM)
+ *  InversionZ — Módulo de Valoración Automática (AVM)
  * ============================================================================
  *  Patrón "proveedor intercambiable": la app solo conoce la interfaz
  *  `AVMProvider`. Hoy se usa `MockAVMProvider`; mañana se añade

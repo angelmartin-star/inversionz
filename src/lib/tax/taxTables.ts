@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  InversionQ — PARÁMETROS FISCALES (España)
+ *  InversionZ — PARÁMETROS FISCALES (España)
  * ============================================================================
  *  ⚠️  ÚNICO FICHERO QUE HAY QUE TOCAR CUANDO CAMBIE LA NORMATIVA.
  *

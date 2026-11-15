@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  InversionQ — Provincias, CCAA y administración receptora del ITP/AJD
+ *  InversionZ — Provincias, CCAA y administración receptora del ITP/AJD
  * ============================================================================
  *  El ITP/AJD es un tributo CEDIDO: el tipo lo fija la CCAA donde radica el
  *  inmueble y se ingresa en su Hacienda autonómica. Excepciones por provincia:

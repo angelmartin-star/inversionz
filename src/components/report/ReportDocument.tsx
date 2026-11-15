@@ -53,7 +53,7 @@ const CONDITION = { A_REFORMAR: "a reformar", BUEN_ESTADO: "en buen estado", OBR
 function Footer({ date }: { date: string }) {
   return (
     <View style={s.footer} fixed>
-      <Text>InversionQ. Informe de inversión inmobiliaria, {date}</Text>
+      <Text>InversionZ. Informe de inversión inmobiliaria, {date}</Text>
       <Text render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
     </View>
   );
@@ -147,11 +147,11 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
   const rent1 = result.projection[0].effectiveRent || 1;
 
   return (
-    <Document title={`Informe InversionQ — ${p.postalCode}`} author="InversionQ" language="es">
+    <Document title={`Informe InversionZ — ${p.postalCode}`} author="InversionZ" language="es">
       {/* Página 1: resumen */}
       <Page size="A4" style={s.page}>
         <View style={s.band}>
-          <Text style={s.brand}>InversionQ. Informe de viabilidad, {date}</Text>
+          <Text style={s.brand}>InversionZ. Informe de viabilidad, {date}</Text>
           <Text style={s.title}>Piso de {num(p.surfaceM2)} m² {CONDITION[p.condition]} en {placeLabel(p.municipality, result.province.name)} por {eur(p.purchasePrice)}</Text>
           {p.address?.street ? <Text style={s.subtitle}>{formatAddress(p.address)}. {p.postalCode} {placeLabel(p.municipality, result.province.name)}</Text> : null}
           {p.cadastre?.refCat ? <Text style={s.subtitle}>Referencia catastral {p.cadastre.refCat}{p.cadastre.use ? `. Uso ${p.cadastre.use.toLowerCase()}` : ""}{p.cadastre.yearBuilt ? `, construido en ${p.cadastre.yearBuilt}` : ""}.</Text> : null}

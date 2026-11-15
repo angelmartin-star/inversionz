@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  InversionQ — MOTOR DE CÁLCULO FINANCIERO Y FISCAL (España, régimen común)
+ *  InversionZ — MOTOR DE CÁLCULO FINANCIERO Y FISCAL (España, régimen común)
  * ============================================================================
  *  Funciones PURAS y deterministas (sin I/O): se ejecutan igual en servidor
  *  (API Route / generación de PDF) y en cliente (recalcular en vivo).

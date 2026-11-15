@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  InversionQ — Cliente del Catastro (Dirección General del Catastro, DGC)
+ *  InversionZ — Cliente del Catastro (Dirección General del Catastro, DGC)
  * ============================================================================
  *  Servicios web LIBRES (sin certificado) de la Sede Electrónica del Catastro,
  *  versión JSON de COVCCallejero:

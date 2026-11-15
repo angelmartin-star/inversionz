@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     return new Response(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="InversionQ-${input.property.postalCode}.pdf"`,
+        "Content-Disposition": `attachment; filename="InversionZ-${input.property.postalCode}.pdf"`,
         "Cache-Control": "no-store",
       },
     });

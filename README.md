@@ -1,4 +1,4 @@
-# InversionQ
+# InversionZ
 
 Análisis de inversión inmobiliaria en España: ITP/IVA por provincia, IRPF del alquiler año a año, plusvalía municipal y ganancia patrimonial en la venta, con informe ejecutivo en PDF.
 

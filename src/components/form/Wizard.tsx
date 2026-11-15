@@ -1,6 +1,6 @@
 "use client";
 /**
- * Formulario multipaso de InversionQ.
+ * Formulario multipaso de InversionZ.
  *  - Un único estado `draft` con la forma de InvestmentInput.
  *  - Cada paso valida SOLO su sección con Zod antes de avanzar.
  *  - El borrador se guarda en localStorage en cada cambio.
@@ -52,7 +52,14 @@ export function Wizard() {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
         const d = JSON.parse(saved);
-        setDraft({ ...EMPTY, ...d, property: { ...EMPTY.property, ...d.property, address: { ...EMPTY.property.address!, ...d.property?.address } } });
+        setDraft({
+          ...EMPTY, ...d,
+          property: { ...EMPTY.property, ...d.property, address: { ...EMPTY.property.address!, ...d.property?.address } },
+          acquisition: { ...EMPTY.acquisition, ...d.acquisition },
+          financing: { ...EMPTY.financing!, ...d.financing },
+          rental: { ...EMPTY.rental, ...d.rental, annualExpenses: { ...EMPTY.rental.annualExpenses, ...d.rental?.annualExpenses } },
+          sale: { ...EMPTY.sale, ...d.sale },
+        });
       }
     } catch { /* almacenamiento no disponible */ }
     setLoaded(true);

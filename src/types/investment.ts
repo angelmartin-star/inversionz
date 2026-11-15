@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  InversionQ — Esquema de datos (interfaces TypeScript)
+ *  InversionZ — Esquema de datos (interfaces TypeScript)
  * ============================================================================
  *  Convenciones:
  *   - Importes en EUROS (number, sin redondear en entrada).
