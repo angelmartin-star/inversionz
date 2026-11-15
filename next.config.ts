@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@react-pdf/renderer"],
   // Las fuentes del PDF se leen del disco: incluirlas en la función serverless de Vercel
   outputFileTracingIncludes: { "/api/report": ["./src/assets/fonts/**"] },
+  // Portadas y textos del blog de BM: legibles desde el panel de Witei para subirlos
+  async headers() {
+    return [{ source: "/blog/:path*", headers: [{ key: "Access-Control-Allow-Origin", value: "*" }] }];
+  },
 };
 
 export default nextConfig;
