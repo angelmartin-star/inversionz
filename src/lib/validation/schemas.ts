@@ -96,7 +96,15 @@ export const saleSchema = z.object({
   reinvestmentAmount: z.number().min(0).optional(),
 });
 
+export const investorSchema = z.object({
+  residenceCountry: z.string().min(2).max(10),
+  homeRentalRate: z.number().min(0).max(0.7).optional(),
+  homeGainRate: z.number().min(0).max(0.7).optional(),
+  cadastralRevisedRecently: z.boolean().optional(),
+});
+
 export const investmentInputSchema = z.object({
+  investor: investorSchema.optional(),
   property: propertySchema,
   acquisition: acquisitionSchema,
   financing: financingSchema.optional(),

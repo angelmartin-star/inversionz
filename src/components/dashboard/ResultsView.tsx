@@ -72,6 +72,7 @@ export function ResultsView() {
   const k = result.kpis;
   const p = input.property;
   const N = input.sale.yearsUntilSale;
+  const nr = result.nonResident;
   const totalCashflows = result.projection.reduce((s, y) => s + y.cashflowAfterTax, 0);
   const expenseRows = buildExpenseRows(input, result);
   const totalExpenses = sumRows(expenseRows);
@@ -117,7 +118,7 @@ export function ResultsView() {
             <dl className="mt-4 divide-y divide-linea border-y border-linea">
               <Kpi label="Rentabilidad bruta" value={pct(k.grossYieldOnPrice)} note="Renta anual sobre el precio de compra" />
               <Kpi label="Rentabilidad neta antes de impuestos" value={pct(k.netYieldBeforeTax)} note="Sobre la inversión total, sin hipoteca" />
-              <Kpi label="Rentabilidad neta después de impuestos" value={pct(k.netYieldAfterTax)} note="Incluye el IRPF del alquiler" />
+              <Kpi label="Rentabilidad neta después de impuestos" value={pct(k.netYieldAfterTax)} note={nr ? `Incluye el IRNR y el impuesto estimado en ${nr.countryName}` : "Incluye el IRPF del alquiler"} />
               <Kpi label="Rentabilidad sobre tu dinero (ROCE)" value={pct(k.roce)} note={`Cashflow neto sobre ${eur(k.equityRequired)} aportados. Con el capital amortizado: ${pct(k.roceIncludingPrincipal)}`} />
               <Kpi label={`TIR a ${N} ${N === 1 ? "año" : "años"} con la venta`} value={pct(k.irr)} note={k.equityMultiple ? `Recuperas ${k.equityMultiple.toLocaleString("es-ES", { maximumFractionDigits: 2 })} veces lo aportado` : undefined} strong />
             </dl>
@@ -156,7 +157,7 @@ export function ResultsView() {
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-xs text-tinta-3">El IBI, la tasa de basuras, el vado, la comunidad y los seguros son deducibles en el IRPF del alquiler.</p>
+          <p className="mt-3 text-xs text-tinta-3">El IBI, la tasa de basuras, el vado, la comunidad y los seguros son deducibles en el impuesto del alquiler{nr && !nr.euEea ? " (salvo para no residentes fuera de la UE/EEE)" : ""}.</p>
         </Section>
 
         {/* Proyección */}
@@ -167,7 +168,7 @@ export function ResultsView() {
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
                 <thead><tr className="border-b border-tinta text-left text-tinta-2">
-                  <th className="py-2 font-medium">Año</th><Th>Renta cobrada</Th><Th>Gastos</Th><Th>Cuota hipoteca</Th><Th>IRPF</Th><Th>Cashflow neto</Th><Th>Deuda pendiente</Th>
+                  <th className="py-2 font-medium">Año</th><Th>Renta cobrada</Th><Th>Gastos</Th><Th>Cuota hipoteca</Th><Th>{nr ? "Impuestos" : "IRPF"}</Th><Th>Cashflow neto</Th><Th>Deuda pendiente</Th>
                 </tr></thead>
                 <tbody>{result.projection.map((y) => (
                   <tr key={y.year} className="border-b border-linea">
@@ -179,7 +180,27 @@ export function ResultsView() {
           </details>
         </Section>
 
-        {/* IRPF */}
+        {/* IRPF / IRNR */}
+        {nr ? (
+          <Section id="irpf" title={`Impuestos del alquiler, primer año (residente en ${nr.countryName})`}
+            intro={nr.euEea
+              ? `Como residente en la UE/EEE pagas en España el IRNR del ${pct(nr.rentalRateSpain, 0)} sobre el rendimiento neto, sin la reducción por alquiler de vivienda.`
+              : `Como residente fuera de la UE/EEE pagas en España el IRNR del ${pct(nr.rentalRateSpain, 0)} sobre el alquiler íntegro, sin descontar gastos.`}>
+            <LineTable rows={[
+              ["Ingresos íntegros", result.irpfYear1.grossIncome],
+              ...(nr.euEea ? [
+                ["Gastos deducibles, intereses y amortizaciones", -(result.irpfYear1.grossIncome - result.irpfYear1.netIncome)] as [string, number],
+                ["Rendimiento neto", result.irpfYear1.netIncome, "sub"] as [string, number, "sub"],
+              ] : []),
+              [`IRNR en España (${pct(nr.rentalRateSpain, 0)}, modelo 210)`, nr.year1.irnrRental],
+              ...(nr.year1.irnrImputed > 0 ? [[`Renta imputada por los meses vacíos (${pct(nr.imputedPct, 1)} del valor catastral)`, nr.year1.irnrImputed] as [string, number]] : []),
+              [nr.method === "EXENCION" ? `Impuesto en ${nr.countryName} (exenta por el convenio)` : `Impuesto en ${nr.countryName} tras descontar el IRNR (${pct(nr.homeRentalRate, 0)})`, nr.year1.homeTax],
+              ...(nr.year1.homeWealthTax > 0 ? [[`IVIE en ${nr.countryName} (descontado el IBI)`, nr.year1.homeWealthTax] as [string, number]] : []),
+              ["Total impuestos del alquiler", nr.year1.total, "total"],
+            ]} />
+            <p className="mt-3 text-sm text-tinta-2">{nr.note}</p>
+          </Section>
+        ) : (<>
         <Section id="irpf" title="IRPF del alquiler, primer año" intro={`El alquiler tributa a tu tipo marginal, que con este piso queda en ${pct(result.irpfYear1.marginalTaxRate, 1)}.`}>
           <LineTable rows={[
             ["Ingresos íntegros", result.irpfYear1.grossIncome],
@@ -196,6 +217,8 @@ export function ResultsView() {
             <p className="mt-3 text-sm text-tinta-2">Quedan {eur(result.irpfYear1.limitedExpensesCarriedForward)} de intereses y reparaciones para deducir en los 4 años siguientes.</p>
           )}
         </Section>
+
+        </>)}
 
         {/* Venta */}
         <Section id="venta" title={`Venta en el año ${N}`} intro={`Vendiendo por ${eur(result.sale.salePrice)}, recibirías ${eur(result.sale.netProceeds)} limpios tras impuestos, gastos y cancelar la hipoteca.`}>
@@ -216,8 +239,8 @@ export function ResultsView() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold">Ganancia patrimonial en el IRPF</h3>
-              <p className="mt-1 mb-3 text-sm text-tinta-2">{input.sale.sellerHabitualResidence ? "Venta de tu vivienda habitual." : "Venta de una vivienda no habitual: la ganancia tributa entera."}</p>
+              <h3 className="font-semibold">{nr ? "Ganancia patrimonial (IRNR)" : "Ganancia patrimonial en el IRPF"}</h3>
+              <p className="mt-1 mb-3 text-sm text-tinta-2">{nr ? `No residente: tributa al ${pct(0.19, 0)} en España, sin exenciones por vivienda habitual.` : input.sale.sellerHabitualResidence ? "Venta de tu vivienda habitual." : "Venta de una vivienda no habitual: la ganancia tributa entera."}</p>
               <LineTable rows={[
                 ["Valor de venta menos gastos y plusvalía", result.sale.capitalGain.transmissionValue],
                 ["Coste de compra, impuestos, gastos y mejoras", -(result.sale.capitalGain.acquisitionValue + result.sale.capitalGain.accumulatedAmortization)],
@@ -227,7 +250,15 @@ export function ResultsView() {
                   [result.sale.capitalGain.exemption === "MAYOR_65_VIVIENDA_HABITUAL" ? "Exención: vivienda habitual, mayor de 65 años" : "Exención por reinversión en vivienda habitual", -result.sale.capitalGain.exemptGain] as [string, number],
                   ["Ganancia que tributa", result.sale.capitalGain.taxableGain, "sub"] as [string, number, "sub"],
                 ] : []),
-                [`IRPF del ahorro (tipo medio ${pct(result.sale.capitalGain.effectiveRate, 1)})`, result.sale.capitalGain.tax, "total"],
+                ...(nr ? [
+                  ["IRNR en España (19 %)", nr.sale.irnr] as [string, number],
+                  ["Retención del 3 % que hace el comprador", -nr.sale.withholding] as [string, number],
+                  [nr.sale.withholdingBalance >= 0 ? "Pendiente de pagar (modelo 210)" : "A devolver por Hacienda (modelo 210)", nr.sale.withholdingBalance, "sub"] as [string, number, "sub"],
+                  [nr.sale.homeTax > 0 ? `Impuesto en ${nr.countryName} tras descontar el IRNR` : `Impuesto en ${nr.countryName}`, nr.sale.homeTax] as [string, number],
+                  [`Total impuestos de la venta (tipo medio ${pct(result.sale.capitalGain.effectiveRate, 1)})`, nr.sale.total, "total"] as [string, number, "total"],
+                ] : [
+                  [`IRPF del ahorro (tipo medio ${pct(result.sale.capitalGain.effectiveRate, 1)})`, result.sale.capitalGain.tax, "total"] as [string, number, "total"],
+                ]),
               ]} />
             </div>
           </div>

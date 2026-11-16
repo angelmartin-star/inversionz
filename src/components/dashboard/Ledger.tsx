@@ -18,7 +18,8 @@ export function buildLedgerRows(input: InvestmentInput, r: InvestmentAnalysisRes
   rows.push({ label: "Gastos del inmueble", detail: "IBI, comunidad, basuras, seguros, mantenimiento", value: -y1.operatingExpenses, kind: "out" });
   if (y1.interest > 0) rows.push({ label: "Intereses de la hipoteca", value: -y1.interest, kind: "out" });
   if (y1.principalRepaid > 0) rows.push({ label: "Devolución de capital", detail: "No es gasto: es patrimonio que recuperas", value: -y1.principalRepaid, kind: "out" });
-  rows.push({ label: "IRPF del alquiler", detail: r.irpfYear1.reductionRate > 0 ? `Con reducción del ${Math.round(r.irpfYear1.reductionRate * 100)} %` : "Sin reducción", value: -y1.irpf, kind: y1.irpf >= 0 ? "out" : "in" });
+  rows.push({ label: r.nonResident ? "Impuestos del alquiler" : "IRPF del alquiler",
+    detail: r.nonResident ? `IRNR en España${r.nonResident.year1.homeTax + r.nonResident.year1.homeWealthTax > 0 ? ` y ${r.nonResident.countryName}` : ""}` : r.irpfYear1.reductionRate > 0 ? `Con reducción del ${Math.round(r.irpfYear1.reductionRate * 100)} %` : "Sin reducción", value: -y1.irpf, kind: y1.irpf >= 0 ? "out" : "in" });
   rows.push({ label: "Te queda en el bolsillo", value: y1.cashflowAfterTax, kind: "total" });
   return rows;
 }

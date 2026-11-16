@@ -143,6 +143,7 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
   const date = new Date(result.meta.generatedAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
   const iiv = result.sale.municipalCapitalGain;
   const cg = result.sale.capitalGain;
+  const nr = result.nonResident;
   const inv = result.investmentBreakdown;
   const expRows = buildExpenseRows(input, result);
   const expTotal = sumRows(expRows);
@@ -236,13 +237,13 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
 
         <View style={s.section}>
           <Text style={s.h2}>Cashflow neto año a año</Text>
-          <Text style={s.intro}>Después de gastos, cuota de la hipoteca e IRPF. Sin incluir la venta.</Text>
+          <Text style={s.intro}>Después de gastos, cuota de la hipoteca e impuestos. Sin incluir la venta.</Text>
           <CashflowBars result={result} />
         </View>
 
         <View style={s.section}>
           <View style={[s.row, { borderBottomColor: C.tinta }]}>
-            {["Año", "Renta cobrada", "Gastos", "Cuota hipoteca", "IRPF", "Cashflow neto", "Deuda pendiente"].map((h, i) => (
+            {["Año", "Renta cobrada", "Gastos", "Cuota hipoteca", nr ? "Impuestos" : "IRPF", "Cashflow neto", "Deuda pendiente"].map((h, i) => (
               <Text key={h} style={[s.th, i === 0 ? { width: 30 } : { flex: 1, textAlign: "right" }]}>{h}</Text>
             ))}
           </View>
@@ -256,6 +257,22 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
           ))}
         </View>
 
+        {nr ? (
+          <View style={s.section} wrap={false}>
+            <Text style={s.h2}>Impuestos del alquiler, primer año (residente en {nr.countryName})</Text>
+            <Text style={s.intro}>{nr.euEea ? `IRNR del ${pct(nr.rentalRateSpain, 0)} sobre el rendimiento neto (residente UE/EEE).` : `IRNR del ${pct(nr.rentalRateSpain, 0)} sobre el alquiler íntegro, sin gastos (residente fuera de la UE/EEE).`}</Text>
+            <Lines rows={[
+              ["Ingresos íntegros", result.irpfYear1.grossIncome],
+              ...(nr.euEea ? [["Rendimiento neto", result.irpfYear1.netIncome, "sub"] as [string, number, "sub"]] : []),
+              [`IRNR en España (${pct(nr.rentalRateSpain, 0)}, modelo 210)`, nr.year1.irnrRental],
+              ...(nr.year1.irnrImputed > 0 ? [["Renta imputada por los meses vacíos", nr.year1.irnrImputed] as [string, number]] : []),
+              [nr.method === "EXENCION" ? `Impuesto en ${nr.countryName} (exenta)` : `Impuesto en ${nr.countryName} tras descontar el IRNR`, nr.year1.homeTax],
+              ...(nr.year1.homeWealthTax > 0 ? [[`IVIE en ${nr.countryName}`, nr.year1.homeWealthTax] as [string, number]] : []),
+              ["Total impuestos del alquiler", nr.year1.total, "total"],
+            ]} />
+            <Text style={[s.muted, { marginTop: 4 }]}>{nr.note} Estimación orientativa del impuesto en {nr.countryName}.</Text>
+          </View>
+        ) : (
         <View style={s.section} wrap={false}>
           <Text style={s.h2}>IRPF del alquiler, primer año</Text>
           <Text style={s.intro}>Rendimientos del capital inmobiliario. Tipo marginal resultante: {pct(result.irpfYear1.marginalTaxRate, 1)}.</Text>
@@ -271,6 +288,7 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
             ["Cuota IRPF atribuible al alquiler", result.irpfYear1.taxDue, "total"],
           ]} />
         </View>
+        )}
         <Footer date={date} />
       </Page>
 
@@ -287,8 +305,8 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
               <View style={s.rowTotal}><Text style={[s.label, s.bold]}>{iiv.isTaxable ? `Cuota al ${pct(iiv.rate)}` : "No sujeto: no hay incremento de valor"}</Text><Text style={[s.value, s.bold]}>{eur(iiv.tax)}</Text></View>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[s.bold, { marginBottom: 4 }]}>Ganancia patrimonial (IRPF del ahorro)</Text>
-              <Text style={[s.muted, { marginBottom: 4 }]}>{input.sale.sellerHabitualResidence ? "Vivienda habitual del vendedor." : "Vivienda no habitual del vendedor."}</Text>
+              <Text style={[s.bold, { marginBottom: 4 }]}>{nr ? "Ganancia patrimonial (IRNR)" : "Ganancia patrimonial (IRPF del ahorro)"}</Text>
+              <Text style={[s.muted, { marginBottom: 4 }]}>{nr ? `No residente (${nr.countryName}): 19 % en España, sin exenciones.` : input.sale.sellerHabitualResidence ? "Vivienda habitual del vendedor." : "Vivienda no habitual del vendedor."}</Text>
               <Lines rows={[
                 ["Valor de transmisión", cg.transmissionValue],
                 ["Valor de adquisición (con mejoras)", -(cg.acquisitionValue + cg.accumulatedAmortization)],
@@ -298,7 +316,13 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
                   [cg.exemption === "MAYOR_65_VIVIENDA_HABITUAL" ? "Exención vivienda habitual (mayor de 65)" : "Exención por reinversión", -cg.exemptGain] as [string, number],
                   ["Ganancia que tributa", cg.taxableGain, "sub"] as [string, number, "sub"],
                 ] : []),
-                [`IRPF (tipo medio ${pct(cg.effectiveRate, 1)})`, cg.tax, "total"],
+                ...(nr ? [
+                  ["IRNR en España (19 %)", nr.sale.irnr] as [string, number],
+                  ["Retención del 3 % del comprador", -nr.sale.withholding] as [string, number],
+                  [nr.sale.withholdingBalance >= 0 ? "Pendiente de pagar" : "A devolver", nr.sale.withholdingBalance, "sub"] as [string, number, "sub"],
+                  [`Impuesto en ${nr.countryName}`, nr.sale.homeTax] as [string, number],
+                  [`Total impuestos (tipo medio ${pct(cg.effectiveRate, 1)})`, nr.sale.total, "total"] as [string, number, "total"],
+                ] : [[`IRPF (tipo medio ${pct(cg.effectiveRate, 1)})`, cg.tax, "total"] as [string, number, "total"]]),
               ]} />
             </View>
           </View>

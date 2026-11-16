@@ -152,7 +152,20 @@ export interface SaleData {
   reinvestmentAmount?: number;
 }
 
+/** Residencia fiscal del inversor. Sin este bloque (o con 'ES') se calcula como residente (IRPF). */
+export interface InvestorData {
+  /** Código del país de residencia ('ES', 'GB', 'FR'… ver src/lib/tax/nonResident.ts) */
+  residenceCountry: string;
+  /** Tipo del país de residencia sobre el alquiler (si no, el de la tabla) */
+  homeRentalRate?: number;
+  /** Tipo del país de residencia sobre la ganancia de la venta (si no, el de la tabla) */
+  homeGainRate?: number;
+  /** Valor catastral revisado en los 10 últimos años (renta imputada 1,1 % en vez de 2 %) */
+  cadastralRevisedRecently?: boolean;
+}
+
 export interface InvestmentInput {
+  investor?: InvestorData;
   property: PropertyData;
   acquisition: AcquisitionCosts;
   financing?: FinancingData;
@@ -213,7 +226,9 @@ export interface IrpfRentalYear {
   reductionRate: number;
   reducedNetIncome: number;           // rendimiento neto reducido
   marginalTaxRate: number;            // tipo marginal del inversor tras integrar el alquiler
-  taxDue: number;                     // cuota incremental IRPF (negativa = ahorro)
+  taxDue: number;                     // cuota incremental IRPF (negativa = ahorro). No residente: total impuestos del año
+  /** Solo no residentes: desglose */
+  nonResident?: { irnrRental: number; irnrImputed: number; homeTax: number; homeWealthTax: number };
 }
 
 export interface YearProjection {
@@ -254,6 +269,21 @@ export interface CapitalGainResult {
   taxableGain: number;                // parte que tributa en la base del ahorro
   tax: number;
   effectiveRate: number;
+}
+
+export interface NonResidentResult {
+  countryCode: string;
+  countryName: string;
+  euEea: boolean;
+  method: 'CREDITO' | 'EXENCION';
+  rentalRateSpain: number;            // 19 % o 24 %
+  rentalBaseSpain: 'NETO' | 'INTEGRO';
+  homeRentalRate: number;
+  homeGainRate: number;
+  imputedPct: number;
+  year1: { irnrRental: number; irnrImputed: number; homeTax: number; homeWealthTax: number; total: number };
+  sale: { irnr: number; withholding: number; withholdingBalance: number; homeTax: number; total: number };
+  note: string;
 }
 
 export interface TaxPayment {
@@ -313,5 +343,7 @@ export interface InvestmentAnalysisResult {
     netProceeds: number;
   };
   taxPayments: TaxPayment[];
+  /** Solo si el inversor no reside en España */
+  nonResident?: NonResidentResult;
   warnings: string[];
 }

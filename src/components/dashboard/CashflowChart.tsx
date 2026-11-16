@@ -22,7 +22,7 @@ export function CashflowChart({ data }: { data: YearProjection[] }) {
                 <p className="mb-1 font-semibold">{p.year}</p>
                 <p>Ingresos menos gastos: {eur(p.noi)}</p>
                 <p>Cuota hipoteca: {eur(p.debt)}</p>
-                <p>IRPF: {eur(p.irpf)}</p>
+                <p>Impuestos: {eur(p.irpf)}</p>
                 <p className="mt-1 font-semibold">Cashflow neto: {eur(p.cashflow)}</p>
               </div>
             );

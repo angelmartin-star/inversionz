@@ -17,6 +17,7 @@ import { eur, pct } from "@/lib/format";
 import { Button, NumberField, Segmented, TextField, Toggle, cn } from "@/components/ui/primitives";
 import { ContactOptIn } from "@/components/leads/ContactOptIn";
 import { notifyLead } from "@/lib/leads/notify";
+import { COUNTRIES, getCountry, IRNR } from "@/lib/tax/nonResident";
 import { CatastroLookup } from "./CatastroLookup";
 
 const DRAFT_KEY = "inversionq:borrador";
@@ -81,6 +82,21 @@ export function Wizard() {
   const setFlags = (patch: NonNullable<InvestmentInput["rental"]["reductionFlags"]>) =>
     setDraft((d) => ({ ...d, rental: { ...d.rental, reductionFlags: { ...d.rental.reductionFlags, ...patch } } }));
   const err = (path: string) => errors[path];
+
+  // Residencia fiscal del inversor
+  const residence = draft.investor?.residenceCountry ?? "ES";
+  const country = getCountry(residence);
+  const setResidence = (code: string) => setDraft((d) => {
+    const c = getCountry(code);
+    return {
+      ...d,
+      investor: c ? { residenceCountry: code, homeRentalRate: c.rentalRate, homeGainRate: c.gainRate, cadastralRevisedRecently: d.investor?.cadastralRevisedRecently ?? false } : { residenceCountry: "ES" },
+      // La base imponible española no se usa para no residentes
+      rental: c && d.rental.investorGeneralTaxBase === undefined ? { ...d.rental, investorGeneralTaxBase: 0 } : d.rental,
+    };
+  });
+  const setInvestor = (patch: Partial<NonNullable<InvestmentInput["investor"]>>) =>
+    setDraft((d) => ({ ...d, investor: { residenceCountry: "ES", ...d.investor, ...patch } }));
 
   const current = STEPS[step];
   const province = useMemo(() => getProvinceFromPostalCode(draft.property.postalCode ?? ""), [draft.property.postalCode]);
@@ -246,6 +262,34 @@ export function Wizard() {
           </>)}
 
           {current.key === "rental" && (<>
+            <fieldset className="sm:col-span-2 rounded-md border border-linea bg-white p-5">
+              <legend className="px-1 text-sm font-medium">¿Dónde tienes tu residencia fiscal?</legend>
+              <label htmlFor="residencia" className="block text-sm text-tinta-2">País de residencia</label>
+              <select id="residencia" value={residence} onChange={(e) => setResidence(e.target.value)}
+                className="mt-1 w-full rounded-md border border-linea bg-white px-3 py-2 text-sm sm:w-80">
+                <option value="ES">España (IRPF)</option>
+                {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </select>
+              {country && (<>
+                <p className="mt-4 text-sm">
+                  En España pagarás el IRNR: <strong>{country.euEea ? `${pct(IRNR.RATE_EU_EEA, 0)} sobre el alquiler neto` : `${pct(IRNR.RATE_GENERAL, 0)} sobre el alquiler íntegro, sin gastos`}</strong> y el {pct(IRNR.RATE_CAPITAL_GAIN, 0)} de la ganancia al vender (el comprador retiene el 3 % del precio).
+                </p>
+                <p className="mt-2 text-sm text-tinta-2">{country.note}</p>
+                <div className="mt-5 grid gap-x-6 gap-y-5 sm:grid-cols-2">
+                  <NumberField label={`Tipo en ${country.name} sobre el alquiler`} unit="%" percent decimals={1} value={draft.investor?.homeRentalRate}
+                    onChange={(v) => setInvestor({ homeRentalRate: v ?? 0 })}
+                    hint={country.method === "EXENCION" ? "Tu país exime esta renta: déjalo en 0" : "Tu tipo marginal allí. Descontamos lo pagado en España"} />
+                  <NumberField label={`Tipo en ${country.name} sobre la ganancia de la venta`} unit="%" percent decimals={1} value={draft.investor?.homeGainRate}
+                    onChange={(v) => setInvestor({ homeGainRate: v ?? 0 })}
+                    hint={country.method === "EXENCION" ? "Tu país exime esta ganancia: déjalo en 0" : "Descontamos el 19 % pagado en España"} />
+                  <div className="sm:col-span-2">
+                    <Toggle label="El valor catastral se revisó en los últimos 10 años" checked={!!draft.investor?.cadastralRevisedRecently}
+                      onChange={(v) => setInvestor({ cadastralRevisedRecently: v })}
+                      description="Para la renta imputada de los meses sin alquilar: 1,1 % del valor catastral en vez del 2 %" />
+                  </div>
+                </div>
+              </>)}
+            </fieldset>
             <div className="sm:col-span-2">
               <Segmented<RentalType> label="Tipo de alquiler" value={draft.rental.rentalType} onChange={(v) => set("rental", { rentalType: v })}
                 options={[
@@ -278,10 +322,10 @@ export function Wizard() {
             <NumberField label="Gestión del alquiler" unit="%" percent decimals={1} value={draft.rental.annualExpenses.managementFeePct} onChange={(v) => setExp({ managementFeePct: v ?? 0 })} hint="Sobre la renta cobrada, si lo gestiona una agencia" />
             <NumberField label="Otros gastos" unit="€/año" decimals={0} value={draft.rental.annualExpenses.other} onChange={(v) => setExp({ other: v ?? 0 })} hint="Suministros a tu cargo u otros" />
             <NumberField label="Subida anual de la renta" unit="%" percent decimals={1} value={draft.rental.annualRentGrowth} onChange={(v) => set("rental", { annualRentGrowth: v ?? 0 })} />
-            <NumberField label="Tu base imponible general" unit="€/año" decimals={0} value={draft.rental.investorGeneralTaxBase} onChange={(v) => set("rental", { investorGeneralTaxBase: v as number })} error={err("rental.investorGeneralTaxBase")}
-              hint="Aproximadamente tu sueldo bruto menos Seguridad Social, sin este piso" className="sm:col-span-2" />
+            {!country && <NumberField label="Tu base imponible general" unit="€/año" decimals={0} value={draft.rental.investorGeneralTaxBase} onChange={(v) => set("rental", { investorGeneralTaxBase: v as number })} error={err("rental.investorGeneralTaxBase")}
+              hint="Aproximadamente tu sueldo bruto menos Seguridad Social, sin este piso" className="sm:col-span-2" />}
 
-            {draft.rental.rentalType === "VIVIENDA_HABITUAL" && (
+            {!country && draft.rental.rentalType === "VIVIENDA_HABITUAL" && (
               <fieldset className="sm:col-span-2 rounded-md border border-linea bg-white p-5">
                 <legend className="px-1 text-sm font-medium">Reducción del IRPF por alquiler de vivienda</legend>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -304,10 +348,10 @@ export function Wizard() {
             <NumberField label="Comisión de la agencia en la venta" unit="%" percent decimals={1} value={draft.sale.saleCommissionPct} onChange={(v) => set("sale", { saleCommissionPct: v ?? 0 })} />
             <NumberField label="Tipo de la plusvalía municipal" unit="%" percent decimals={2} value={draft.sale.municipalCapitalGainRate} onChange={(v) => set("sale", { municipalCapitalGainRate: v })} error={err("sale.municipalCapitalGainRate")}
               hint="Opcional. Si lo dejas vacío usamos el de tu ayuntamiento si lo conocemos, o el máximo legal (30 %)" />
-            <NumberField label="Otras ganancias o rentas del ahorro ese año" unit="€" decimals={0} value={draft.rental.investorSavingsTaxBaseInSaleYear}
-              onChange={(v) => set("rental", { investorSavingsTaxBaseInSaleYear: v ?? 0 })} hint="Dividendos, intereses, otras ventas. Afecta al tramo del IRPF de la venta" />
+            {!country && <NumberField label="Otras ganancias o rentas del ahorro ese año" unit="€" decimals={0} value={draft.rental.investorSavingsTaxBaseInSaleYear}
+              onChange={(v) => set("rental", { investorSavingsTaxBaseInSaleYear: v ?? 0 })} hint="Dividendos, intereses, otras ventas. Afecta al tramo del IRPF de la venta" />}
 
-            <fieldset className="sm:col-span-2 rounded-md border border-linea bg-white p-5">
+            {!country && <fieldset className="sm:col-span-2 rounded-md border border-linea bg-white p-5">
               <legend className="px-1 text-sm font-medium">IRPF del vendedor: ¿es su vivienda habitual?</legend>
               <div className="mt-1">
                 <Segmented<"NO" | "SI"> label="Cuando la vendas, ¿será tu vivienda habitual?" value={draft.sale.sellerHabitualResidence ? "SI" : "NO"}
@@ -331,7 +375,7 @@ export function Wizard() {
                   )}
                 </div>
               )}
-            </fieldset>
+            </fieldset>}
             <ContactOptIn className="sm:col-span-2" onSend={() => notifyLead("analisis", draft, undefined, { force: true })} />
           </>)}
         </div>

@@ -27,7 +27,7 @@
 import type {
   AcquisitionTaxResult, CCAACode, CapitalGainResult, InvestmentAnalysisResult,
   InvestmentInput, IrpfRentalYear, KPIs, MortgageSchedule, MunicipalCapitalGainResult,
-  ProvinceInfo, RentalData, RentalReductionCase, TaxPayment, YearProjection,
+  NonResidentResult, ProvinceInfo, RentalData, RentalReductionCase, TaxPayment, YearProjection,
 } from '../../types/investment';
 import {
   AJD_NEW_BUILD, AMORTIZATION, Bracket, IIVTNU_COEFFICIENTS, IIVTNU_MAX_RATE,
@@ -36,6 +36,7 @@ import {
   RENTAL_REDUCTIONS, TAX_TABLES_VERSION,
 } from '../tax/taxTables';
 import { getProvinceByCode, getProvinceFromPostalCode } from '../tax/provinces';
+import { IRNR, getCountry, type CountryProfile } from '../tax/nonResident';
 
 // ============================================================================
 // Utilidades
@@ -287,6 +288,46 @@ export function computeRentalIrpfYear(params: {
   };
 }
 
+// ============================================================================
+// No residentes: IRNR en España + estimación del impuesto en el país de residencia
+// ============================================================================
+
+export interface NonResidentSetup {
+  profile: CountryProfile;
+  rateSpain: number;
+  homeRentalRate: number;
+  homeGainRate: number;
+  imputedPct: number;
+}
+
+export function resolveNonResident(input: InvestmentInput): NonResidentSetup | null {
+  const profile = getCountry(input.investor?.residenceCountry);
+  if (!profile) return null;
+  return {
+    profile,
+    rateSpain: profile.euEea ? IRNR.RATE_EU_EEA : IRNR.RATE_GENERAL,
+    homeRentalRate: input.investor?.homeRentalRate ?? profile.rentalRate,
+    homeGainRate: input.investor?.homeGainRate ?? profile.gainRate,
+    imputedPct: input.investor?.cadastralRevisedRecently ? IRNR.IMPUTED_PCT_REVISED : IRNR.IMPUTED_PCT_DEFAULT,
+  };
+}
+
+/** Sustituye el IRPF del año por IRNR + impuesto del país de residencia (muta y devuelve el año). */
+export function applyNonResidentYear(y: IrpfRentalYear, nr: NonResidentSetup, input: InvestmentInput, ibi: number): IrpfRentalYear {
+  const net = y.netIncome;
+  const irnrRental = nr.profile.euEea ? nr.rateSpain * Math.max(net, 0) : nr.rateSpain * Math.max(y.grossIncome, 0);
+  const vacancy = input.rental.vacancyRate ?? 0;
+  const irnrImputed = input.property.cadastralValueTotal * nr.imputedPct * vacancy * nr.rateSpain;
+  const homeTax = nr.profile.method === 'CREDITO' ? Math.max(0, nr.homeRentalRate * Math.max(net, 0) - irnrRental) : 0;
+  const homeWealthTax = nr.profile.wealthTaxOnValue ? Math.max(0, input.property.cadastralValueTotal * nr.profile.wealthTaxOnValue - ibi) : 0;
+  y.reductionRate = 0;
+  y.reducedNetIncome = net;
+  y.marginalTaxRate = nr.rateSpain;
+  y.taxDue = irnrRental + irnrImputed + homeTax + homeWealthTax;
+  y.nonResident = { irnrRental, irnrImputed, homeTax, homeWealthTax };
+  return y;
+}
+
 /** Proyección año a año. withFinancing=false -> escenario sin deuda (rentabilidad neta "pura"). */
 export function projectYears(
   input: InvestmentInput, province: ProvinceInfo, mortgage: MortgageSchedule | null,
@@ -296,6 +337,7 @@ export function projectYears(
   const e = r.annualExpenses;
   const N = input.sale.yearsUntilSale;
   const reduction = resolveRentalReduction(r);
+  const nr = resolveNonResident(input);
   const carry: CarryItem[] = [];
   const irpf: IrpfRentalYear[] = [];
   const projection: YearProjection[] = [];
@@ -325,8 +367,9 @@ export function projectYears(
     const irpfYear = computeRentalIrpfYear({
       year: y, grossIncome: effectiveRent, unlimitedExpenses: unlimited, limitedExpensesCurrent: limitedCurrent,
       amortizationBuilding: amort.annualBuilding, amortizationFurniture: furnitureAmort,
-      reductionRate: reduction.rate, investorBase: r.investorGeneralTaxBase, ccaa: province.ccaa, carry,
+      reductionRate: reduction.rate, investorBase: r.investorGeneralTaxBase ?? 0, ccaa: province.ccaa, carry,
     });
+    if (nr) applyNonResidentYear(irpfYear, nr, input, e.ibi * gE);
     irpf.push(irpfYear);
     accumulatedBuildingAmortization += amort.annualBuilding;
 
@@ -497,7 +540,8 @@ export function runInvestmentAnalysis(input: InvestmentInput): InvestmentAnalysi
   const rType = input.rental.rentalType;
   if (rType === 'TURISTICO') warnings.push('Alquiler turístico: sin reducción del art. 23.2. Si presta servicios propios de hostelería es actividad económica (IVA 21 %, otro régimen): revisar.');
   if (rType === 'TEMPORADA') warnings.push('Alquiler de temporada: no es vivienda habitual del inquilino, sin reducción del art. 23.2.');
-  if ((input.rental.vacancyRate ?? 0) > 0) warnings.push('Periodos sin alquilar: no se calcula la imputación de rentas inmobiliarias (art. 85 LIRPF).');
+  const nr = resolveNonResident(input);
+  if (!nr && (input.rental.vacancyRate ?? 0) > 0) warnings.push('Periodos sin alquilar: no se calcula la imputación de rentas inmobiliarias (art. 85 LIRPF).');
 
   // 6. Venta
   const s = input.sale;
@@ -512,16 +556,48 @@ export function runInvestmentAnalysis(input: InvestmentInput): InvestmentAnalysi
     accumulatedAmortization: levered.accumulatedBuildingAmortization,
     salePrice: s.estimatedSalePrice, saleCosts, municipalTax: municipalCapitalGain.tax,
     otherSavingsBase: input.rental.investorSavingsTaxBaseInSaleYear ?? 0,
-    habitualResidence: s.sellerHabitualResidence, aged65Plus: s.sellerAged65Plus,
+    habitualResidence: nr ? false : s.sellerHabitualResidence, aged65Plus: nr ? false : s.sellerAged65Plus,
     reinvestmentAmount: s.reinvestmentAmount,
     outstandingLoan: mortgage ? (mortgage.years[N - 1]?.endingBalance ?? 0) : 0,
   });
-  if (s.sellerHabitualResidence) {
+  // No residente: IRNR 19 % sobre la ganancia (sin exenciones) + impuesto en su país; retención del 3 %
+  let nonResident: NonResidentResult | undefined;
+  if (nr) {
+    const gainPos = Math.max(capitalGain.gain, 0);
+    const irnr = IRNR.RATE_CAPITAL_GAIN * gainPos;
+    const homeTaxable = !(nr.profile.gainOnlyIfHeldUnderYears && N >= nr.profile.gainOnlyIfHeldUnderYears);
+    const homeSaleTax = nr.profile.method === 'CREDITO' && homeTaxable ? Math.max(0, nr.homeGainRate * gainPos - irnr) : 0;
+    capitalGain.exemption = 'NINGUNA';
+    capitalGain.exemptGain = 0;
+    capitalGain.taxableGain = gainPos;
+    capitalGain.tax = irnr + homeSaleTax;
+    capitalGain.effectiveRate = gainPos > 0 ? capitalGain.tax / gainPos : 0;
+    const withholding = IRNR.SALE_WITHHOLDING * s.estimatedSalePrice;
+    const y1nr = levered.irpf[0].nonResident!;
+    nonResident = {
+      countryCode: nr.profile.code, countryName: nr.profile.name, euEea: nr.profile.euEea, method: nr.profile.method,
+      rentalRateSpain: nr.rateSpain, rentalBaseSpain: nr.profile.euEea ? 'NETO' : 'INTEGRO',
+      homeRentalRate: nr.homeRentalRate, homeGainRate: homeTaxable ? nr.homeGainRate : 0, imputedPct: nr.imputedPct,
+      year1: { ...y1nr, total: levered.irpf[0].taxDue },
+      sale: { irnr, withholding, withholdingBalance: irnr - withholding, homeTax: homeSaleTax, total: irnr + homeSaleTax },
+      note: nr.profile.note,
+    };
+    if (!nr.profile.euEea)
+      warnings.push(`Residente fuera de la UE/EEE: el IRNR del alquiler es el 24 % de la renta íntegra, sin descontar gastos (criterio de Hacienda; hay sentencias que admiten deducirlos y se puede reclamar).`);
+    if ((input.rental.vacancyRate ?? 0) > 0)
+      warnings.push(`Meses sin alquilar: renta imputada del ${(nr.imputedPct * 100).toLocaleString('es-ES')} % del valor catastral, proporcional al tiempo vacío.`);
+    warnings.push(`Venta: el comprador retiene el 3 % del precio (${Math.round(withholding).toLocaleString('es-ES')} €) a cuenta del IRNR; ${irnr >= withholding ? 'la diferencia se paga con el modelo 210' : 'el exceso se recupera con el modelo 210'}.`);
+    if (s.sellerHabitualResidence || s.sellerAged65Plus || (s.reinvestmentAmount ?? 0) > 0)
+      warnings.push('No residente: no se aplican las exenciones del IRPF por vivienda habitual (65 años o reinversión).');
+    warnings.push(`Impuesto en ${nr.profile.name}: estimación orientativa con un tipo del ${(nr.homeRentalRate * 100).toLocaleString('es-ES')} % sobre el alquiler. Depende de tu renta total y de las normas de tu país: confírmalo con un asesor allí.`);
+  }
+
+  if (!nr && s.sellerHabitualResidence) {
     warnings.push('Vivienda habitual al vender: exige haber vivido en ella al menos 3 años seguidos y venderla mientras lo es o en los 2 años siguientes a dejar de serlo. La proyección asume alquiler todo el periodo: ajusta los años de alquiler si vas a vivir en ella.');
     if (!s.sellerAged65Plus && !(s.reinvestmentAmount && s.reinvestmentAmount > 0))
       warnings.push('Ser vivienda habitual no exime por sí solo: la ganancia queda exenta si tienes 65 años o más, o en la parte que reinviertas en otra vivienda habitual en 2 años.');
   }
-  if (capitalGain.gain < 0) warnings.push('La venta genera pérdida patrimonial: compensable con otras ganancias del ahorro (no modelado).');
+  if (!nr && capitalGain.gain < 0) warnings.push('La venta genera pérdida patrimonial: compensable con otras ganancias del ahorro (no modelado).');
   const outstandingMortgage = mortgage ? (mortgage.years[N - 1]?.endingBalance ?? 0) : 0;
   const netProceeds = s.estimatedSalePrice - saleCosts - municipalCapitalGain.tax - capitalGain.tax - outstandingMortgage;
 
@@ -554,14 +630,16 @@ export function runInvestmentAnalysis(input: InvestmentInput): InvestmentAnalysi
   };
 
   // Calendario de pagos a Hacienda
-  const taxPayments = buildTaxPayments(input, province, acquisitionTaxes, levered.irpf[0].taxDue, municipalCapitalGain, capitalGain);
+  const taxPayments = nonResident
+    ? buildNonResidentTaxPayments(input, province, acquisitionTaxes, municipalCapitalGain, nonResident)
+    : buildTaxPayments(input, province, acquisitionTaxes, levered.irpf[0].taxDue, municipalCapitalGain, capitalGain);
 
   return {
     meta: { taxTablesVersion: TAX_TABLES_VERSION, generatedAt: new Date().toISOString() },
     province, acquisitionTaxes, investmentBreakdown: inv.breakdown, mortgage, kpis,
     irpfYear1: levered.irpf[0], irpfByYear: levered.irpf, projection: levered.projection,
     sale: { salePrice: s.estimatedSalePrice, saleCosts, municipalCapitalGain, capitalGain, outstandingMortgage, netProceeds },
-    taxPayments, warnings,
+    taxPayments, nonResident, warnings,
   };
 }
 
@@ -606,5 +684,41 @@ export function buildTaxPayments(
     amount: gain.tax,
     authority: irpfAuthority, form: province.isForalTerritory ? 'Declaración foral de IRPF' : 'Modelo 100 (Renta)',
     deadline: 'Campaña de la Renta del año siguiente a la venta' });
+  return out;
+}
+
+/** Calendario de pagos de un inversor no residente: IRNR (modelo 210/211) + estimación en su país. */
+export function buildNonResidentTaxPayments(
+  input: InvestmentInput, province: ProvinceInfo, acq: AcquisitionTaxResult,
+  iivtnu: MunicipalCapitalGainResult, nr: NonResidentResult,
+): TaxPayment[] {
+  // Compra, IBI, basuras, vado y plusvalía municipal: igual que un residente
+  const base = buildTaxPayments(input, province, acq, 0, iivtnu, {
+    acquisitionValue: 0, accumulatedAmortization: 0, transmissionValue: 0, gain: 0,
+    exemption: 'NINGUNA', exemptGain: 0, taxableGain: 0, tax: 0, effectiveRate: 0,
+  }).filter((p) => !p.concept.startsWith('IRPF'));
+  const aeat = 'Agencia Estatal de Administración Tributaria (AEAT)';
+  const home = `Administración tributaria de ${nr.countryName}`;
+  const out: TaxPayment[] = base.filter((p) => p.moment === 'COMPRA');
+  out.push({ moment: 'ANUAL', concept: `IRNR — alquiler (${(nr.rentalRateSpain * 100).toFixed(0)} % sobre el rendimiento ${nr.rentalBaseSpain === 'NETO' ? 'neto' : 'íntegro'}), estimación año 1`,
+    amount: nr.year1.irnrRental, authority: aeat, form: 'Modelo 210', deadline: 'Declaración anual del año siguiente (consulta el plazo vigente en la AEAT)' });
+  if (nr.year1.irnrImputed > 0)
+    out.push({ moment: 'ANUAL', concept: 'IRNR — renta imputada por los meses sin alquilar', amount: nr.year1.irnrImputed,
+      authority: aeat, form: 'Modelo 210', deadline: 'Declaración anual del año siguiente' });
+  if (nr.year1.homeTax > 0)
+    out.push({ moment: 'ANUAL', concept: `Impuesto en ${nr.countryName} sobre el alquiler (estimación, tras descontar el IRNR)`, amount: nr.year1.homeTax,
+      authority: home, form: 'Declaración de la renta de tu país', deadline: 'Según el calendario de tu país' });
+  if (nr.year1.homeWealthTax > 0)
+    out.push({ moment: 'ANUAL', concept: `IVIE en ${nr.countryName} (1,06 % del valor, descontado el IBI)`, amount: nr.year1.homeWealthTax,
+      authority: home, form: 'Declaración de la renta de tu país', deadline: 'Según el calendario de tu país' });
+  out.push(...base.filter((p) => p.moment === 'ANUAL'));
+  out.push(...base.filter((p) => p.moment === 'VENTA'));
+  out.push({ moment: 'VENTA', concept: 'Retención del 3 % del precio que practica el comprador (a cuenta del IRNR)', amount: nr.sale.withholding,
+    authority: aeat, form: 'Modelo 211 (lo presenta el comprador)', deadline: 'Un mes desde la firma de la venta' });
+  out.push({ moment: 'VENTA', concept: nr.sale.withholdingBalance >= 0 ? 'IRNR — ganancia de la venta (19 %): diferencia a pagar tras la retención' : 'IRNR — ganancia de la venta (19 %): devolución del exceso retenido',
+    amount: nr.sale.withholdingBalance, authority: aeat, form: 'Modelo 210', deadline: 'En los 3 meses siguientes al plazo de la retención' });
+  if (nr.sale.homeTax > 0)
+    out.push({ moment: 'VENTA', concept: `Impuesto en ${nr.countryName} sobre la ganancia (estimación, tras descontar el IRNR)`, amount: nr.sale.homeTax,
+      authority: home, form: 'Declaración de la renta de tu país', deadline: 'Según el calendario de tu país' });
   return out;
 }
