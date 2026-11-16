@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="no-print border-b border-linea bg-papel">
           <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-2">
             <Link href="/" aria-label="InversionZ, inicio" className="py-1">
-              <Logo size={32} background="#f6f7f4" />
+              <Logo size={40} />
             </Link>
             <nav aria-label="Herramientas" className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium text-tinta-2">
               {NAV.map((n) => <Link key={n.href} href={n.href} className="hover:text-tinta">{n.label}</Link>)}

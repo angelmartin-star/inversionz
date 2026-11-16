@@ -4,14 +4,15 @@
  * Gráficos dibujados con primitivas (View/Svg) para que el PDF sea vectorial y ligero.
  */
 import path from "node:path";
-import { Document, Font, Page, Path, Rect, StyleSheet, Svg, Text, View, Line } from "@react-pdf/renderer";
-import { BRAND, LYNX, LYNX_VIEWBOX } from "@/components/brand/lynx";
+import { Document, Font, Image, Page, Path, Rect, StyleSheet, Svg, Text, View, Line } from "@react-pdf/renderer";
+import { BRAND } from "@/components/brand/lynx";
 import type { InvestmentAnalysisResult, InvestmentInput, TaxPayment } from "@/types/investment";
 import { buildLedgerRows } from "@/components/dashboard/Ledger";
 import { eur, formatAddress, num, pct, placeLabel, signedEur } from "@/lib/format";
 import { buildExpenseRows, sumRows } from "@/lib/expenses";
 
 const FONT_DIR = path.join(process.cwd(), "src", "assets", "fonts");
+const LOGO_DARK = path.join(process.cwd(), "src", "assets", "brand", "logo-horizontal-fondo-oscuro.png");
 Font.register({
   family: "Plex",
   fonts: [
@@ -154,15 +155,7 @@ export function ReportDocument({ input, result }: { input: InvestmentInput; resu
       <Page size="A4" style={s.page}>
         <View style={s.band}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-              <Svg width={20} height={28} viewBox={LYNX_VIEWBOX}>
-                <Path d={LYNX.tufts} stroke="#FFFFFF" strokeWidth={4} strokeLinecap="round" fill="none" />
-                <Path d={LYNX.head} fill="#FFFFFF" stroke="#FFFFFF" strokeWidth={2} />
-                <Path d={LYNX.cutouts} fill={BRAND.primary} />
-                <Path d={LYNX.eye} fill={BRAND.light} />
-              </Svg>
-              <Text style={{ fontFamily: "Jakarta", fontWeight: 800, fontSize: 15, color: "#FFFFFF" }}>Inversion<Text style={{ color: BRAND.light }}>Z</Text></Text>
-            </View>
+            <Image src={LOGO_DARK} style={{ width: 108, height: 36, marginLeft: -4 }} />
             <Text style={s.brand}>Informe de viabilidad, {date}</Text>
           </View>
           <Text style={s.title}>Piso de {num(p.surfaceM2)} m² {CONDITION[p.condition]} en {placeLabel(p.municipality, result.province.name)} por {eur(p.purchasePrice)}</Text>

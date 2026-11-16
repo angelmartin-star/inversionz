@@ -38,7 +38,7 @@ export default function Home() {
               <p className="mt-5 max-w-[56ch] text-lg text-tinta-2">Tres herramientas para invertir en vivienda en España. Empieza por la que necesites.</p>
             </div>
             <div className="hidden justify-self-center md:block md:pr-8 lg:pr-16">
-              <LynxMark size={300} background="#f6f7f4" />
+              <LynxMark size={300} />
             </div>
           </div>
 
