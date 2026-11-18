@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ContactFab } from "@/components/ContactFab";
 import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main className="flex-1">{children}</main>
+        <ContactFab />
         <footer className="no-print border-t border-linea py-6 text-center text-xs text-tinta-3">
           <nav aria-label="Información legal" className="mb-3 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-tinta-2">
             {LEGAL.map((l) => (

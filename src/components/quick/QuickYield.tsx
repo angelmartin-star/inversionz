@@ -10,7 +10,7 @@ import { notifyLead } from "@/lib/leads/notify";
 
 const KEY = "inversionz:rapida";
 const DRAFT_KEY = "inversionq:borrador";
-const EMPTY: QuickYieldInput = { purchasePrice: undefined as unknown as number, monthlyRent: undefined as unknown as number, ibi: 0, community: 0, wasteTax: 0, postalCode: "" };
+const EMPTY: QuickYieldInput = { purchasePrice: undefined as unknown as number, monthlyRent: undefined as unknown as number, ibi: 0, community: 0, wasteTax: 0, notaryFees: 0, managementFees: 0, postalCode: "" };
 
 export function QuickYield() {
   const router = useRouter();
@@ -20,7 +20,8 @@ export function QuickYield() {
   useEffect(() => { if (loaded) try { localStorage.setItem(KEY, JSON.stringify(q)); } catch { /* */ } }, [q, loaded]);
   const set = (p: Partial<QuickYieldInput>) => setQ((x) => ({ ...x, ...p }));
   const r = useMemo(() => quickYield(q), [q]);
-  const summary = r ? { "Rentabilidad bruta": pct(r.grossYield), "Rentabilidad neta": pct(r.netYield), "Ingreso neto anual": eur(r.netAnnualIncome) } : undefined;
+  const summary = r ? { "Rentabilidad bruta": pct(r.grossYield), "Rentabilidad neta": pct(r.netYield), "Ingreso neto anual": eur(r.netAnnualIncome),
+    "Inversión total": eur(r.totalInvestment), "Rentabilidad neta sobre la inversión": pct(r.netYieldOnInvestment) } : undefined;
 
   // Aviso a BM cuando el usuario deja de tocar el formulario 20 s con un resultado válido
   useEffect(() => {
@@ -36,6 +37,8 @@ export function QuickYield() {
       const raw = localStorage.getItem(DRAFT_KEY);
       const d = raw ? JSON.parse(raw) : {};
       d.property = { ...(d.property ?? {}), purchasePrice: q.purchasePrice, postalCode: q.postalCode || d.property?.postalCode || "" };
+      if (q.notaryFees || q.managementFees)
+        d.acquisition = { ...(d.acquisition ?? {}), ...(q.notaryFees ? { notaryFees: q.notaryFees, registryFees: 0 } : {}), ...(q.managementFees ? { buyerAgencyCommission: q.managementFees } : {}) };
       d.rental = { ...(d.rental ?? {}), monthlyRent: q.monthlyRent,
         annualExpenses: { ...(d.rental?.annualExpenses ?? {}), ibi: q.ibi, community: q.community, wasteTax: q.wasteTax } };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
@@ -46,7 +49,7 @@ export function QuickYield() {
   return (
     <div className="mx-auto max-w-5xl px-5 py-10">
       <h1 className="text-3xl font-semibold tracking-tight">Rentabilidad rápida</h1>
-      <p className="mt-2 max-w-[60ch] text-tinta-2">Cinco datos y tienes la rentabilidad bruta y neta de un piso en alquiler. Para hipoteca, IRPF y venta, usa el análisis completo.</p>
+      <p className="mt-2 max-w-[60ch] text-tinta-2">Unos pocos datos y tienes la rentabilidad bruta y neta de un piso en alquiler. Para hipoteca, IRPF y venta, usa el análisis completo.</p>
 
       <div className="mt-8 grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="grid content-start gap-5">
@@ -57,6 +60,10 @@ export function QuickYield() {
           <NumberField label="Tasa de basuras" unit="€/año" decimals={0} value={q.wasteTax} onChange={(v) => set({ wasteTax: v ?? 0 })} />
           <TextField label="Código postal (opcional)" inputMode="numeric" maxLength={5} value={q.postalCode ?? ""} onChange={(v) => set({ postalCode: v.replace(/\D/g, "") })}
             hint={r?.provinceName ? `Sumamos el ITP de ${r.provinceName}` : "Para sumar el ITP de la provincia a la inversión"} />
+          <NumberField label="Gastos de notaría y registro" unit="€" decimals={0} value={q.notaryFees} onChange={(v) => set({ notaryFees: v ?? 0 })}
+            hint="Pago único al comprar. Suele rondar 1.000–2.000 €" />
+          <NumberField label="Honorarios de gestión" unit="€" decimals={0} value={q.managementFees} onChange={(v) => set({ managementFees: v ?? 0 })}
+            hint="Agencia, personal shopper o gestoría que te cobra a ti" />
           <ContactOptIn onSend={() => notifyLead("rentabilidad", q, summary, { force: true })} />
         </div>
 
@@ -74,9 +81,12 @@ export function QuickYield() {
                   <Row label="IBI, comunidad y basuras" value={`−${eur(r.annualExpenses)}`} />
                   <Row label="Ingreso neto anual" value={eur(r.netAnnualIncome)} strong />
                   <Row label="Al mes" value={eur(r.monthlyNet)} />
-                  {r.transferTax !== null && <>
-                    <Row label={`ITP en ${r.provinceName}`} value={eur(r.transferTax)} />
-                    <Row label="Rentabilidad neta con el ITP" value={pct(r.netYieldWithTax)} strong />
+                  {r.transferTax !== null && <Row label={`ITP en ${r.provinceName}`} value={eur(r.transferTax)} />}
+                  {r.notaryFees > 0 && <Row label="Notaría y registro" value={eur(r.notaryFees)} />}
+                  {r.managementFees > 0 && <Row label="Honorarios de gestión" value={eur(r.managementFees)} />}
+                  {r.totalInvestment > (q.purchasePrice || 0) && <>
+                    <Row label="Inversión total" value={eur(r.totalInvestment)} />
+                    <Row label="Rentabilidad neta sobre la inversión" value={pct(r.netYieldOnInvestment)} strong />
                   </>}
                   {r.paybackYears && <Row label="Años para recuperar la compra" value={`${num(r.paybackYears)} años`} />}
                 </tbody>

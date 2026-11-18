@@ -20,7 +20,7 @@ const TOOLS = [
   {
     href: "/rentabilidad", title: "Rentabilidad rápida", cta: "Calcular en un minuto", color: "bmVerde" as const,
     text: "La rentabilidad bruta y neta de un piso en alquiler, con el ITP de la provincia si indicas el código postal.",
-    asks: "precio, alquiler, IBI, comunidad y basuras",
+    asks: "precio, alquiler, IBI, comunidad, basuras y, si quieres, notaría y honorarios",
   },
 ];
 

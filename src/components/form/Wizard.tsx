@@ -225,10 +225,10 @@ export function Wizard() {
           {current.key === "acquisition" && (<>
             <NumberField label="Reforma" unit="€" decimals={0} value={draft.acquisition.renovationCost} onChange={(v) => set("acquisition", { renovationCost: v ?? 0 })} error={err("acquisition.renovationCost")} />
             <NumberField label="Mobiliario y electrodomésticos" unit="€" decimals={0} value={draft.acquisition.furnitureCost} onChange={(v) => set("acquisition", { furnitureCost: v ?? 0 })} />
-            <NumberField label="Notaría" unit="€" decimals={0} value={draft.acquisition.notaryFees} onChange={(v) => set("acquisition", { notaryFees: v ?? 0 })} />
+            <NumberField label="Gastos de notaría" unit="€" decimals={0} value={draft.acquisition.notaryFees} onChange={(v) => set("acquisition", { notaryFees: v ?? 0 })} />
             <NumberField label="Registro de la Propiedad" unit="€" decimals={0} value={draft.acquisition.registryFees} onChange={(v) => set("acquisition", { registryFees: v ?? 0 })} />
             <NumberField label="Gestoría y tasación" unit="€" decimals={0} value={draft.acquisition.agencyFees} onChange={(v) => set("acquisition", { agencyFees: v ?? 0 })} />
-            <NumberField label="Honorarios de búsqueda o agencia" unit="€" decimals={0} value={draft.acquisition.buyerAgencyCommission} onChange={(v) => set("acquisition", { buyerAgencyCommission: v ?? 0 })} hint="Personal shopper o agencia que te cobra a ti" />
+            <NumberField label="Honorarios de gestión (agencia o personal shopper)" unit="€" decimals={0} value={draft.acquisition.buyerAgencyCommission} onChange={(v) => set("acquisition", { buyerAgencyCommission: v ?? 0 })} hint="Personal shopper o agencia que te cobra a ti" />
             <div className="sm:col-span-2">
               <Toggle label="La reforma es una mejora" checked={draft.acquisition.renovationIsImprovement ?? true} onChange={(v) => set("acquisition", { renovationIsImprovement: v })}
                 description="Actívalo si la reforma aumenta el valor de la vivienda (cocina, baños, instalaciones). Se amortiza al 3 % y reduce el IRPF de la venta. Si solo es reparación, se deduce el primer año." />
