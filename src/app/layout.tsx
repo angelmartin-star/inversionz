@@ -48,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ContactFab />
         <footer className="no-print border-t border-linea py-6 text-center text-xs text-tinta-3">
           <nav aria-label="Información legal" className="mb-3 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-tinta-2">
+            <ContactNavLink className="cursor-pointer font-semibold text-bm-azul underline-offset-2 hover:underline" />
             {LEGAL.map((l) => (
               <a key={l.label} href={l.href} target="_blank" rel="noopener" className="underline-offset-2 hover:text-tinta hover:underline">{l.label}</a>
             ))}
