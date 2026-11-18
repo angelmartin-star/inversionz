@@ -6,10 +6,27 @@ const PHONE = "+34638102519";
 const PHONE_LABEL = "638 10 25 19";
 const WHATSAPP = "https://wa.me/34638102519?text=" + encodeURIComponent("Hola, vengo de InversionZ y quiero hablar con un asesor.");
 const EMAIL = "contacto@bminversiones.es";
+const OPEN_EVENT = "inversionz:abrir-contacto";
+
+/** Enlace "Contacto" del menú: abre el mismo recuadro que el botón flotante. */
+export function ContactNavLink({ className }: { className?: string }) {
+  return (
+    <button type="button" className={className} aria-controls="contacto-bm"
+      onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new Event(OPEN_EVENT)); }}>
+      Contacto
+    </button>
+  );
+}
 
 export function ContactFab() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     if (!open) return;

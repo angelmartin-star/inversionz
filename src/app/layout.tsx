@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ContactFab } from "@/components/ContactFab";
+import { ContactFab, ContactNavLink } from "@/components/ContactFab";
 import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
@@ -40,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <nav aria-label="Herramientas" className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-medium text-tinta-2">
               {NAV.map((n) => <Link key={n.href} href={n.href} className="hover:text-tinta">{n.label}</Link>)}
+              <ContactNavLink className="cursor-pointer font-semibold text-bm-azul hover:text-tinta" />
             </nav>
           </div>
         </header>
